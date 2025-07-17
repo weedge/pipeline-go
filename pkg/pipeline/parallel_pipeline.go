@@ -55,7 +55,7 @@ func (pp *ParallelPipeline) ProcessFrame(frame frames.Frame, direction processor
 
 	// On cancellation or end, close the queues to terminate the goroutines.
 	switch frame.(type) {
-	case frames.CancelFrame, frames.EndFrame:
+	case frames.CancelFrame, frames.EndFrame, *frames.CancelFrame, *frames.EndFrame:
 		// Closing the channel will terminate the range loop in the fan-in goroutines
 		// which will then cause the WaitGroup to be done.
 		defer close(pp.downQueue)
