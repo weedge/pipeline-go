@@ -1,44 +1,40 @@
 package main
 
 import (
+	"bytes"
 	"log"
-	"time"
+	"strings"
 
-	"github.com/wuyong/pipeline-go/pkg/frames"
 	"github.com/wuyong/pipeline-go/pkg/pipeline"
 	"github.com/wuyong/pipeline-go/pkg/processors"
-	"github.com/wuyong/pipeline-go/pkg/processors/filters"
+	"github.com/wuyong/pipeline-go/pkg/processors/io"
 )
 
 func main() {
-	log.Println("Starting null filter example")
+	log.Println("Starting I/O processor example")
 
-	// 1. Create a null filter and a logger
-	filter := filters.NewNullFilter()
-	logger := processors.NewLoggerProcessor("OutputLogger")
+	// 1. Prepare the input and output buffers
+	inputData := "hello world\nthis is a test\n"
+	inputBuffer := bytes.NewBufferString(inputData)
+	var outputBuffer bytes.Buffer
 
-	// 2. Create a pipeline
+	// 2. Create the I/O processors and a transformer
+	reader := io.NewReaderProcessor(inputBuffer)
+	transformer := processors.NewStatelessTextTransformer(strings.ToUpper)
+	writer := io.NewWriterProcessor(&outputBuffer)
+
+	// 3. Create a pipeline
+	// The reader is the source, so it's not part of the pipeline itself.
+	// It will push frames into the pipeline.
 	pl := pipeline.NewPipeline(
-		[]processors.FrameProcessor{filter, logger},
+		[]processors.FrameProcessor{transformer, writer},
 		nil, nil,
 	)
+	reader.Link(pl)
 
-	// 3. Create a pipeline task
-	params := pipeline.PipelineParams{}
-	task := pipeline.NewPipelineTask(pl, params)
+	// 4. Start the reader. This will drive the pipeline.
+	reader.StartReading()
 
-	// 4. Run the task in a separate goroutine
-	go task.Run()
-
-	// 5. Queue some frames
-	log.Println("Queueing frames")
-	task.QueueFrame(&frames.TextFrame{Text: "this should be dropped by the null filter"})
-	task.QueueFrame(frames.EndFrame{})
-
-	// Wait for the task to finish
-	for !task.HasFinished() {
-		time.Sleep(100 * time.Millisecond)
-	}
-
-	log.Println("Null filter example finished")
+	// 5. Print the result from the output buffer
+	log.Printf("Pipeline finished. Output:\n%s", outputBuffer.String())
 }
