@@ -1,3 +1,14 @@
+
+
+
+<img width="1245" height="423" alt="image" src="https://github.com/user-attachments/assets/841dc53f-272d-4116-91d5-4dfe421f4182" />
+
+image gen from GPT [image](https://github.com/weedge/pipeline-py) to image, prompt:
+
+```
+Replace the Super Mario characters with Go programming language mascot (Gopher). Keep the green pipe structure in the middle exactly the same. Replace both Mario characters on the left and right sides with cute Go gophers in similar poses. The gophers should be pixel art style to match the original Mario aesthetic. Maintain the black background.
+```
+
 # Pipeline-Go
 
 Pipeline-Go is a Go library for building flexible, concurrent data processing pipelines. It is inspired by a similar Python project and provides a structured way to process streams of data "frames" through a series of composable "processors".
