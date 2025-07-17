@@ -224,3 +224,67 @@ func TestHoldLastFrameAggregator(t *testing.T) {
 
 	task.Run()
 }
+
+func TestGatedAggregator(t *testing.T) {
+	var collectedFrames []frames.Frame
+	var mu sync.Mutex
+
+	collector := processors.NewOutputProcessor(func(frame frames.Frame) {
+		// We don't want to collect control frames
+		switch frame.(type) {
+		case *frames.StartFrame, *frames.EndFrame:
+			return
+		}
+		mu.Lock()
+		defer mu.Unlock()
+		collectedFrames = append(collectedFrames, frame)
+	})
+
+	gateOpenFn := func(f frames.Frame) bool {
+		_, ok := f.(*frames.ImageRawFrame)
+		return ok
+	}
+	gateCloseFn := func(f frames.Frame) bool {
+		_, ok := f.(*frames.TextFrame)
+		return ok
+	}
+
+	aggregator := aggregators.NewGatedAggregator(gateOpenFn, gateCloseFn, false, processors.FrameDirectionDownstream)
+
+	pipeline := NewPipeline([]processors.FrameProcessor{
+		aggregator,
+		collector,
+	}, nil, nil)
+
+	task := NewPipelineTask(pipeline, PipelineParams{})
+
+	// 1. Gate is closed. This frame is dropped.
+	task.QueueFrame(frames.NewTextFrame("Hello, "))
+	// 2. Gate is closed. This frame is dropped.
+	task.QueueFrame(frames.NewTextFrame("Hello again."))
+	// 3. Gate is closed, but this frame opens it. It is passed through.
+	task.QueueFrame(frames.NewImageRawFrame(
+		[]byte{}, frames.ImageSize{Width: 0, Height: 0}, "JPEG", "RGB",
+	))
+	// 4. Gate is open. This frame is passed through, and then closes the gate.
+	task.QueueFrame(frames.NewTextFrame("Goodbye1."))
+	// 5. Gate is closed. This frame is dropped.
+	task.QueueFrame(frames.NewTextFrame("Goodbye2."))
+	// 6. Gate is closed, but this frame opens it. It is passed through.
+	task.QueueFrame(frames.NewImageRawFrame(
+		[]byte{}, frames.ImageSize{Width: 0, Height: 0}, "JPEG", "RGB",
+	))
+	// 7. Gate is open. This frame is passed through, and then closes the gate.
+	task.QueueFrame(frames.NewTextFrame("Goodbye3."))
+
+	task.QueueFrame(frames.NewEndFrame())
+
+	task.Run()
+
+	// Assert that only the frames that passed through the open gate were collected
+	assert.Len(t, collectedFrames, 4)
+	assert.IsType(t, &frames.ImageRawFrame{}, collectedFrames[0])
+	assert.IsType(t, &frames.TextFrame{}, collectedFrames[1])
+	assert.IsType(t, &frames.ImageRawFrame{}, collectedFrames[2])
+	assert.IsType(t, &frames.TextFrame{}, collectedFrames[3])
+}

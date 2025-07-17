@@ -53,19 +53,22 @@ func (a *GatedAggregator) ProcessFrame(frame frames.Frame, direction processors.
 		return
 	}
 
-	// First, process the frame based on the current gate state.
+	shouldOpen := !a.isGateOpen && a.gateOpenFn(frame)
+	shouldClose := a.isGateOpen && a.gateCloseFn(frame)
+
+	// If the gate is currently open, we should process the frame.
+	// This includes the frame that is about to close the gate.
 	if a.isGateOpen {
+		a.PushFrame(frame, direction)
+	} else if shouldOpen {
+		// If the gate is closed but this frame opens it, we should also process it.
 		a.PushFrame(frame, direction)
 	}
 
-	// Then, update the gate state for the next frame.
-	if a.isGateOpen {
-		if a.gateCloseFn(frame) {
-			a.isGateOpen = false
-		}
-	} else {
-		if a.gateOpenFn(frame) {
-			a.isGateOpen = true
-		}
+	// Now, update the state for the next frame.
+	if shouldOpen {
+		a.isGateOpen = true
+	} else if shouldClose {
+		a.isGateOpen = false
 	}
 }
