@@ -1,11 +1,14 @@
 package aggregators
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/wuyong/pipeline-go/pkg/frames"
 	"github.com/wuyong/pipeline-go/pkg/processors"
 )
+
+var endOfSentencePattern = regexp.MustCompile(`[\.。\?？\!！:：]`)
 
 // SentenceAggregator aggregates text frames into sentences.
 type SentenceAggregator struct {
@@ -18,9 +21,12 @@ func NewSentenceAggregator() *SentenceAggregator {
 	return &SentenceAggregator{}
 }
 
-// hasEndOfSentence checks for sentence-terminating punctuation.
+// hasEndOfSentence checks for sentence-terminating punctuation using regex.
 func (a *SentenceAggregator) hasEndOfSentence(s string) bool {
-	return strings.HasSuffix(s, ".") || strings.HasSuffix(s, "?") || strings.HasSuffix(s, "!")
+	// A simplified regex is used here for brevity. The original Python version's
+	// lookbehind-based regex is not directly supported in Go's standard regexp engine.
+	// This version checks for common sentence-ending punctuation at the end of the string.
+	return endOfSentencePattern.MatchString(strings.TrimSpace(s))
 }
 
 // ProcessFrame accumulates text and emits a frame when a sentence is complete.

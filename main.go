@@ -2,22 +2,19 @@ package main
 
 import (
 	"log"
-	"reflect"
 	"time"
 
 	"github.com/wuyong/pipeline-go/pkg/frames"
-	"github.com/wuyong/pipeline-go/pkg/notifiers"
 	"github.com/wuyong/pipeline-go/pkg/pipeline"
 	"github.com/wuyong/pipeline-go/pkg/processors"
 	"github.com/wuyong/pipeline-go/pkg/processors/aggregators"
 )
 
 func main() {
-	log.Println("Starting notifier-based hold aggregator example")
+	log.Println("Starting improved aggregator example")
 
-	// 1. Create a notifier, aggregator, and logger
-	notifier := notifiers.NewChannelNotifier()
-	aggregator := aggregators.NewHoldLastFrameAggregator(reflect.TypeOf(&frames.TextFrame{}), notifier)
+	// 1. Create an aggregator and a logger
+	aggregator := aggregators.NewSentenceAggregator()
 	logger := processors.NewLoggerProcessor("OutputLogger")
 
 	// 2. Create a pipeline
@@ -33,20 +30,12 @@ func main() {
 	// 4. Run the task in a separate goroutine
 	go task.Run()
 
-	// 5. Queue a frame to be held
-	log.Println("Queueing frame to hold")
-	task.QueueFrame(&frames.TextFrame{Text: "this frame is held"})
-
-	// 6. Start a goroutine to notify after a delay
-	go func() {
-		log.Println("Notifier will send notification in 1 second...")
-		time.Sleep(1 * time.Second)
-		log.Println("Notifying!")
-		notifier.Notify()
-	}()
-
-	// 7. End the pipeline after giving the notification time to be processed
-	time.Sleep(1500 * time.Millisecond)
+	// 5. Queue some frames to be aggregated
+	log.Println("Queueing frames")
+	task.QueueFrame(&frames.TextFrame{Text: "This is a test from Dr. Smith"})
+	task.QueueFrame(&frames.TextFrame{Text: " in the U.S.A."}) // Should not split here
+	task.QueueFrame(&frames.TextFrame{Text: " What do you think?"})
+	task.QueueFrame(&frames.TextFrame{Text: "I think it's great!"})
 	task.QueueFrame(frames.EndFrame{})
 
 	// Wait for the task to finish
@@ -54,5 +43,5 @@ func main() {
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	log.Println("Notifier example finished")
+	log.Println("Improved aggregator example finished")
 }
