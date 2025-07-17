@@ -34,7 +34,7 @@ func NewGatedAggregator(
 func (a *GatedAggregator) isControlFrame(frame frames.Frame) bool {
 	switch frame.(type) {
 	case frames.StartFrame, frames.EndFrame, frames.CancelFrame, frames.ErrorFrame, frames.StopTaskFrame, frames.MetricsFrame, frames.SyncFrame:
-		return true
+	return true
 	default:
 		return false
 	}

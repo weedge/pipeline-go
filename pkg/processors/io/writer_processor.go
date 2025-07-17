@@ -33,8 +33,6 @@ func (p *WriterProcessor) ProcessFrame(frame frames.Frame, direction processors.
 	switch f := frame.(type) {
 	case *frames.TextFrame:
 		output = f.Text
-	case *frames.BytesFrame:
-		output = string(f.Bytes)
 	// Add other frame types here as needed.
 	default:
 		// For other types, maybe just pass them through or log them.
