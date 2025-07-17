@@ -2,62 +2,53 @@ package main
 
 import (
 	"log"
-	"time"
 
 	"github.com/weedge/pipeline-go/pkg/frames"
 	"github.com/weedge/pipeline-go/pkg/pipeline"
 	"github.com/weedge/pipeline-go/pkg/processors"
+	"github.com/weedge/pipeline-go/pkg/processors/filters"
 )
 
-// SlowProcessor is a processor with an artificial delay.
-type SlowProcessor struct {
-	processors.BaseProcessor
-}
-
-func (p *SlowProcessor) ProcessFrame(frame frames.Frame, direction processors.FrameDirection) {
-	log.Printf("SlowProcessor: received %T, starting to 'work' for 1 second...", frame)
-	time.Sleep(1 * time.Second)
-	log.Printf("SlowProcessor: finished 'work' for %T, pushing downstream.", frame)
-	p.PushFrame(frame, direction)
-}
-
 func main() {
-	log.Println("Starting concurrent processor example")
+	log.Println("Starting pipeline example...")
 
-	// 1. Create a slow processor and wrap it in a concurrent one.
-	slowProc := &SlowProcessor{}
-	concurrentProc := processors.NewConcurrentProcessor(slowProc)
-	logger := processors.NewLoggerProcessor("OutputLogger")
+	// 1. Create the processors
+	// This filter will only allow frames that are NOT ImageRawFrames to pass
+	imageFilter := filters.NewFrameFilter(func(frame frames.Frame) bool {
+		if _, ok := frame.(*frames.ImageRawFrame); ok {
+			return false // Drop the frame
+		}
+		return true // Keep the frame
+	})
 
-	// 2. Create a pipeline with only the concurrent processor
-	pl := pipeline.NewPipeline(
-		[]processors.FrameProcessor{concurrentProc},
+	// This logger will print any frame that it receives
+	logger := processors.NewFrameTraceLogger("output", 0)
+
+	// 2. Create a new pipeline
+	myPipeline := pipeline.NewPipeline(
+		[]processors.FrameProcessor{
+			imageFilter,
+			logger,
+		},
 		nil, nil,
 	)
-	// The logger is linked to the output of the pipeline.
-	pl.Link(logger)
 
-	// 3. Create a pipeline task
-	params := pipeline.PipelineParams{}
-	task := pipeline.NewPipelineTask(pl, params)
-
-	// 4. Run the task in a separate goroutine
+	// 3. Create and run a pipeline task
+	task := pipeline.NewPipelineTask(myPipeline, pipeline.PipelineParams{})
 	go task.Run()
 
-	// 5. Queue frames. This should return quickly, without waiting for the slow processor.
-	log.Println("Queueing frame 1 (should not block)")
-	task.QueueFrame(&frames.TextFrame{Text: "first"})
-	log.Println("Queueing frame 2 (should not block)")
-	task.QueueFrame(&frames.TextFrame{Text: "second"})
+	// 4. Send frames to the pipeline
+	log.Println("Queueing TextFrame...")
+	task.QueueFrame(frames.NewTextFrame("Hello, world!"))
 
-	// 6. End the pipeline. This will now block until the concurrent processor is finished.
-	log.Println("Queueing EndFrame (will block until work is done)")
-	task.QueueFrame(frames.EndFrame{})
+	log.Println("Queueing ImageRawFrame (will be filtered out)...")
+	task.QueueFrame(frames.NewImageRawFrame([]byte{}, frames.ImageSize{}, "PNG", "RGB"))
 
-	// Wait for the task to finish
-	for !task.HasFinished() {
-		time.Sleep(100 * time.Millisecond)
-	}
+	log.Println("Queueing AudioRawFrame...")
+	task.QueueFrame(frames.NewAudioRawFrame([]byte{}, 16000, 1, 2))
 
-	log.Println("Concurrent processor example finished")
+	// 5. Send a stop frame to terminate the pipeline
+	task.QueueFrame(frames.NewStopTaskFrame())
+
+	log.Println("Pipeline finished.")
 }
