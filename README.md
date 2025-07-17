@@ -1,75 +1,105 @@
-# Go Pipeline
+# Pipeline-Go
 
-This is a Go implementation of a generic, asynchronous pipeline for processing frames of data. It is a refactoring of the original Python project.
+Pipeline-Go is a Go library for building flexible, concurrent data processing pipelines. It is inspired by a similar Python project and provides a structured way to process streams of data "frames" through a series of composable "processors".
+
+## Core Concepts
+
+- **Frame**: The basic unit of data that flows through a pipeline. Frames can be of various types, such as `TextFrame`, `ImageRawFrame`, or control frames like `EndFrame` and `StartFrame`.
+- **Processor**: An interface for components that act on frames. Processors are the building blocks of a pipeline. They can be used to filter, transform, aggregate, or perform any other operation on frames.
+- **Pipeline**: A sequence of processors linked together. Pipelines can be simple linear sequences or more complex parallel structures.
+- **Task**: An executable instance of a pipeline. A `PipelineTask` manages the lifecycle of a pipeline, including running it, queueing frames, and handling shutdown.
 
 ## Features
 
-- Generic `FrameProcessor` interface
-- Asynchronous, channel-based `Pipeline` and `PipelineTask`
-- Protobuf-defined data frames for cross-compatibility
-- Simple, composable design
+- **Sequential & Parallel Pipelines**: Build simple linear pipelines (`NewPipeline`) or complex concurrent pipelines that process frames in parallel (`NewParallelPipeline`, `NewSyncParallelPipeline`).
+- **Rich Set of Processors**: Includes a variety of built-in processors for common tasks:
+    - **Filtering**: `FrameFilter` (based on a function) and `TypeFilter` (based on frame type).
+    - **Aggregation**: `SentenceAggregator`, `GatedAggregator`, `HoldFramesAggregator`, and `HoldLastFrameAggregator`.
+- **Extensible**: Easily create your own custom processors by implementing the `FrameProcessor` interface.
+- **Concurrency-Safe**: Designed with concurrency in mind, using Go channels and goroutines for asynchronous processing.
 
-## Installation
+## Directory Structure
 
-To use this library in your project:
-```bash
-go get github.com/weedge/pipeline-go
+```
+/
+├── pkg/
+│   ├── frames/      # Defines all data and control frame types
+│   ├── notifiers/   # A simple channel-based notification system
+│   ├── pipeline/    # Core logic for Pipeline, PipelineTask, and parallel variants
+│   └── processors/  # All built-in FrameProcessor implementations
+├── go.mod
+└── main.go        # An example executable
 ```
 
-## Usage
+## Usage Example
 
-Below is a simple example of creating and running a pipeline. For a more detailed example, see `examples/sentence_aggregator`.
+Here is a simple example of building a pipeline that filters out `ImageRawFrame`s and logs the remaining frames.
 
 ```go
 package main
 
 import (
-	"context"
-	"fmt"
-	"github.com/weedge/pipeline-go/frames"
-	"github.com/weedge/pipeline-go/pipeline"
-	"github.com/weedge/pipeline-go/processors"
+	"log"
+
+	"github.com/weedge/pipeline-go/pkg/frames"
+	"github.com/weedge/pipeline-go/pkg/pipeline"
+	"github.com/weedge/pipeline-go/pkg/processors"
+	"github.com/weedge/pipeline-go/pkg/processors/filters"
 )
 
-// SimpleProcessor is a basic example of a frame processor.
-type SimpleProcessor struct {
-	pipeline.BaseProcessor
-}
-
-func (p *SimpleProcessor) ProcessFrame(frame frames.PipelineFrame, direction processors.FrameDirection) error {
-	fmt.Printf("Processing frame: %s\n", frame.GetFrameName())
-	return p.BaseProcessor.ProcessFrame(frame, direction)
-}
-
 func main() {
-	// 1. Create a processor
-	simpleProcessor := &SimpleProcessor{}
+	log.Println("Starting pipeline example...")
+
+	// 1. Create the processors
+	// This filter will only allow frames that are NOT ImageRawFrames to pass
+	imageFilter := filters.NewFrameFilter(func(frame frames.Frame) bool {
+		if _, ok := frame.(*frames.ImageRawFrame); ok {
+			return false // Drop the frame
+		}
+		return true // Keep the frame
+	})
+
+	// This logger will print any frame that it receives
+	logger := processors.NewFrameTraceLogger("output", 0)
 
 	// 2. Create a new pipeline
-	myPipeline := pipeline.NewPipeline(simpleProcessor)
+	myPipeline := pipeline.NewPipeline(
+		[]processors.FrameProcessor{
+			imageFilter,
+			logger,
+		},
+		nil, nil,
+	)
 
 	// 3. Create and run a pipeline task
-	task := pipeline.NewPipelineTask(myPipeline)
-	go task.Run(context.Background())
+	task := pipeline.NewPipelineTask(myPipeline, pipeline.PipelineParams{})
+	go task.Run()
 
-	// 4. Send a frame
-	task.InChan() <- &frames.TextFrame{Text: "Hello, world!"}
+	// 4. Send frames to the pipeline
+	log.Println("Queueing TextFrame...")
+	task.QueueFrame(frames.NewTextFrame("Hello, world!"))
 
-	// ... wait for processing or handle output ...
+	log.Println("Queueing ImageRawFrame (will be filtered out)...")
+	task.QueueFrame(frames.NewImageRawFrame([]byte{}, frames.ImageSize{}, "PNG", "RGB"))
+
+	log.Println("Queueing AudioRawFrame...")
+	task.QueueFrame(frames.NewAudioRawFrame([]byte{}, 16000, 1, 2))
+
+	// 5. Send a stop frame to terminate the pipeline
+	task.QueueFrame(frames.NewStopTaskFrame())
+
+	log.Println("Pipeline finished.")
 }
 ```
+
+To run this example, you can save it as `main.go` and execute `go run .`.
 
 ## Running Tests
 
-To run the test suite:
+To run the complete test suite and see verbose output:
 ```bash
-go test ./... -v
+go test -v ./...
 ```
 
-## Running Examples
-
-To run the sentence aggregator example:
-```bash
-go run ./examples/sentence_aggregator/main.go
-```
-```
+# Reference
+-  pipeline-py: https://github.com/weedge/pipeline-py
