@@ -44,3 +44,6 @@ type TextFrame struct {
 type BytesFrame struct {
 	Bytes []byte
 }
+
+// IdleFrame is a control frame indicating a period of inactivity.
+type IdleFrame struct{}

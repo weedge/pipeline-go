@@ -1,40 +1,51 @@
 package main
 
 import (
-	"bytes"
 	"log"
-	"strings"
+	"time"
 
+	"github.com/wuyong/pipeline-go/pkg/frames"
 	"github.com/wuyong/pipeline-go/pkg/pipeline"
 	"github.com/wuyong/pipeline-go/pkg/processors"
-	"github.com/wuyong/pipeline-go/pkg/processors/io"
 )
 
 func main() {
-	log.Println("Starting I/O processor example")
+	log.Println("Starting idle processor example")
 
-	// 1. Prepare the input and output buffers
-	inputData := "hello world\nthis is a test\n"
-	inputBuffer := bytes.NewBufferString(inputData)
-	var outputBuffer bytes.Buffer
+	// 1. Create an idle processor and a logger
+	idle := processors.NewIdleProcessor(500 * time.Millisecond)
+	logger := processors.NewLoggerProcessor("OutputLogger")
 
-	// 2. Create the I/O processors and a transformer
-	reader := io.NewReaderProcessor(inputBuffer)
-	transformer := processors.NewStatelessTextTransformer(strings.ToUpper)
-	writer := io.NewWriterProcessor(&outputBuffer)
-
-	// 3. Create a pipeline
-	// The reader is the source, so it's not part of the pipeline itself.
-	// It will push frames into the pipeline.
+	// 2. Create a pipeline
 	pl := pipeline.NewPipeline(
-		[]processors.FrameProcessor{transformer, writer},
+		[]processors.FrameProcessor{idle, logger},
 		nil, nil,
 	)
-	reader.Link(pl)
 
-	// 4. Start the reader. This will drive the pipeline.
-	reader.StartReading()
+	// 3. Create a pipeline task
+	params := pipeline.PipelineParams{}
+	task := pipeline.NewPipelineTask(pl, params)
 
-	// 5. Print the result from the output buffer
-	log.Printf("Pipeline finished. Output:\n%s", outputBuffer.String())
+	// 4. Run the task in a separate goroutine
+	go task.Run()
+
+	// 5. Queue some frames with delays
+	log.Println("Queueing frame 1")
+	task.QueueFrame(&frames.TextFrame{Text: "first frame"})
+	time.Sleep(200 * time.Millisecond)
+
+	log.Println("Queueing frame 2")
+	task.QueueFrame(&frames.TextFrame{Text: "second frame"})
+
+	log.Println("Waiting for idle timeout...")
+	time.Sleep(700 * time.Millisecond) // Wait for idle frame
+
+	task.QueueFrame(frames.EndFrame{})
+
+	// Wait for the task to finish
+	for !task.HasFinished() {
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	log.Println("Idle processor example finished")
 }
