@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/wuyong/pipeline-go/pkg/frames"
+	"github.com/wuyong/pipeline-go/pkg/notifiers"
 	"github.com/wuyong/pipeline-go/pkg/processors"
 )
 
@@ -12,30 +13,24 @@ import (
 type HoldLastFrameAggregator struct {
 	processors.BaseProcessor
 	holdFrameType reflect.Type
+	notifier      notifiers.Notifier
 	lastFrame     frames.Frame
 	lock          sync.Mutex
-	releaseChan   chan struct{}
 	once          sync.Once
 }
 
 // NewHoldLastFrameAggregator creates a new HoldLastFrameAggregator.
-// The frameType argument should be a reflect.Type of the frame to hold (e.g., reflect.TypeOf(&frames.TextFrame{})).
-func NewHoldLastFrameAggregator(frameType reflect.Type) *HoldLastFrameAggregator {
+func NewHoldLastFrameAggregator(frameType reflect.Type, notifier notifiers.Notifier) *HoldLastFrameAggregator {
 	return &HoldLastFrameAggregator{
 		holdFrameType: frameType,
-		releaseChan:   make(chan struct{}),
+		notifier:      notifier,
 	}
 }
 
-// Release signals the aggregator to release the held frame.
-func (a *HoldLastFrameAggregator) Release() {
-	a.releaseChan <- struct{}{}
-}
-
-// startReleaseListener starts a goroutine that waits for a release signal.
+// startReleaseListener starts a goroutine that waits for a notification.
 func (a *HoldLastFrameAggregator) startReleaseListener(direction processors.FrameDirection) {
 	go func() {
-		for range a.releaseChan {
+		for range a.notifier.Wait() {
 			a.lock.Lock()
 			if a.lastFrame != nil {
 				a.PushFrame(a.lastFrame, direction)

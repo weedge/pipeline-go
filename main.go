@@ -2,23 +2,27 @@ package main
 
 import (
 	"log"
+	"reflect"
 	"time"
 
 	"github.com/wuyong/pipeline-go/pkg/frames"
+	"github.com/wuyong/pipeline-go/pkg/notifiers"
 	"github.com/wuyong/pipeline-go/pkg/pipeline"
 	"github.com/wuyong/pipeline-go/pkg/processors"
+	"github.com/wuyong/pipeline-go/pkg/processors/aggregators"
 )
 
 func main() {
-	log.Println("Starting idle processor example")
+	log.Println("Starting notifier-based hold aggregator example")
 
-	// 1. Create an idle processor and a logger
-	idle := processors.NewIdleProcessor(500 * time.Millisecond)
+	// 1. Create a notifier, aggregator, and logger
+	notifier := notifiers.NewChannelNotifier()
+	aggregator := aggregators.NewHoldLastFrameAggregator(reflect.TypeOf(&frames.TextFrame{}), notifier)
 	logger := processors.NewLoggerProcessor("OutputLogger")
 
 	// 2. Create a pipeline
 	pl := pipeline.NewPipeline(
-		[]processors.FrameProcessor{idle, logger},
+		[]processors.FrameProcessor{aggregator, logger},
 		nil, nil,
 	)
 
@@ -29,17 +33,20 @@ func main() {
 	// 4. Run the task in a separate goroutine
 	go task.Run()
 
-	// 5. Queue some frames with delays
-	log.Println("Queueing frame 1")
-	task.QueueFrame(&frames.TextFrame{Text: "first frame"})
-	time.Sleep(200 * time.Millisecond)
+	// 5. Queue a frame to be held
+	log.Println("Queueing frame to hold")
+	task.QueueFrame(&frames.TextFrame{Text: "this frame is held"})
 
-	log.Println("Queueing frame 2")
-	task.QueueFrame(&frames.TextFrame{Text: "second frame"})
+	// 6. Start a goroutine to notify after a delay
+	go func() {
+		log.Println("Notifier will send notification in 1 second...")
+		time.Sleep(1 * time.Second)
+		log.Println("Notifying!")
+		notifier.Notify()
+	}()
 
-	log.Println("Waiting for idle timeout...")
-	time.Sleep(700 * time.Millisecond) // Wait for idle frame
-
+	// 7. End the pipeline after giving the notification time to be processed
+	time.Sleep(1500 * time.Millisecond)
 	task.QueueFrame(frames.EndFrame{})
 
 	// Wait for the task to finish
@@ -47,5 +54,5 @@ func main() {
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	log.Println("Idle processor example finished")
+	log.Println("Notifier example finished")
 }
