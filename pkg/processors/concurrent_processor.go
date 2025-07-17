@@ -3,7 +3,7 @@ package processors
 import (
 	"sync"
 
-	"github.com/wuyong/pipeline-go/pkg/frames"
+	"github.com/weedge/pipeline-go/pkg/frames"
 )
 
 // ConcurrentProcessor wraps a FrameProcessor to make it run in its own goroutine.

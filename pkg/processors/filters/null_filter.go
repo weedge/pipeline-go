@@ -1,8 +1,8 @@
 package filters
 
 import (
-	"github.com/wuyong/pipeline-go/pkg/frames"
-	"github.com/wuyong/pipeline-go/pkg/processors"
+	"github.com/weedge/pipeline-go/pkg/frames"
+	"github.com/weedge/pipeline-go/pkg/processors"
 )
 
 // NullFilter drops all frames that pass through it, except for control frames.

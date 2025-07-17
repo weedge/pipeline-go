@@ -2,7 +2,8 @@ package processors
 
 import (
 	"log"
-	"github.com/wuyong/pipeline-go/pkg/frames"
+
+	"github.com/weedge/pipeline-go/pkg/frames"
 )
 
 // LoggerProcessor is a simple processor that logs frames.

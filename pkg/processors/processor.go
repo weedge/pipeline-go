@@ -1,7 +1,7 @@
 package processors
 
 import (
-	"github.com/wuyong/pipeline-go/pkg/frames"
+	"github.com/weedge/pipeline-go/pkg/frames"
 )
 
 // FrameDirection indicates the direction of a frame in the pipeline.

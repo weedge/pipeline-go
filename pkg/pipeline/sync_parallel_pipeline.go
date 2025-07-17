@@ -3,8 +3,8 @@ package pipeline
 import (
 	"sync"
 
-	"github.com/wuyong/pipeline-go/pkg/frames"
-	"github.com/wuyong/pipeline-go/pkg/processors"
+	"github.com/weedge/pipeline-go/pkg/frames"
+	"github.com/weedge/pipeline-go/pkg/processors"
 )
 
 // SyncParallelPipeline runs multiple pipelines in parallel and synchronizes their output.

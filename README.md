@@ -13,7 +13,7 @@ This is a Go implementation of a generic, asynchronous pipeline for processing f
 
 To use this library in your project:
 ```bash
-go get github.com/wuyong/pipeline-go
+go get github.com/weedge/pipeline-go
 ```
 
 ## Usage
@@ -26,9 +26,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/wuyong/pipeline-go/frames"
-	"github.com/wuyong/pipeline-go/pipeline"
-	"github.com/wuyong/pipeline-go/processors"
+	"github.com/weedge/pipeline-go/frames"
+	"github.com/weedge/pipeline-go/pipeline"
+	"github.com/weedge/pipeline-go/processors"
 )
 
 // SimpleProcessor is a basic example of a frame processor.

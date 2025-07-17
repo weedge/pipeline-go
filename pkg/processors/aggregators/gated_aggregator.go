@@ -1,18 +1,18 @@
 package aggregators
 
 import (
-	"github.com/wuyong/pipeline-go/pkg/frames"
-	"github.com/wuyong/pipeline-go/pkg/processors"
+	"github.com/weedge/pipeline-go/pkg/frames"
+	"github.com/weedge/pipeline-go/pkg/processors"
 )
 
 // GatedAggregator accumulates frames and releases them when a gate opens.
 type GatedAggregator struct {
 	processors.BaseProcessor
-	gateOpenFn   func(frames.Frame) bool
-	gateCloseFn  func(frames.Frame) bool
-	isGateOpen   bool
-	accumulator  []frames.Frame
-	direction    processors.FrameDirection
+	gateOpenFn  func(frames.Frame) bool
+	gateCloseFn func(frames.Frame) bool
+	isGateOpen  bool
+	accumulator []frames.Frame
+	direction   processors.FrameDirection
 }
 
 // NewGatedAggregator creates a new GatedAggregator.
@@ -34,7 +34,7 @@ func NewGatedAggregator(
 func (a *GatedAggregator) isControlFrame(frame frames.Frame) bool {
 	switch frame.(type) {
 	case frames.StartFrame, frames.EndFrame, frames.CancelFrame, frames.ErrorFrame, frames.StopTaskFrame, frames.MetricsFrame, frames.SyncFrame:
-	return true
+		return true
 	default:
 		return false
 	}

@@ -5,18 +5,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/wuyong/pipeline-go/pkg/frames"
+	"github.com/weedge/pipeline-go/pkg/frames"
 )
 
 // IdleProcessor detects periods of inactivity and emits an IdleFrame.
 type IdleProcessor struct {
 	BaseProcessor
-	timeout         time.Duration
-	resetTypes      map[reflect.Type]bool
-	timer           *time.Timer
-	lock            sync.Mutex
-	once            sync.Once
-	downstreamDir   FrameDirection
+	timeout       time.Duration
+	resetTypes    map[reflect.Type]bool
+	timer         *time.Timer
+	lock          sync.Mutex
+	once          sync.Once
+	downstreamDir FrameDirection
 }
 
 // NewIdleProcessor creates a new IdleProcessor.

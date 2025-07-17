@@ -7,8 +7,8 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/wuyong/pipeline-go/pkg/frames"
-	"github.com/wuyong/pipeline-go/pkg/idl"
+	"github.com/weedge/pipeline-go/pkg/frames"
+	"github.com/weedge/pipeline-go/pkg/idl"
 )
 
 // ProtobufSerializer implements the Serializer interface for Protobuf.

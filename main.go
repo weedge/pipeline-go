@@ -4,9 +4,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/wuyong/pipeline-go/pkg/frames"
-	"github.com/wuyong/pipeline-go/pkg/pipeline"
-	"github.com/wuyong/pipeline-go/pkg/processors"
+	"github.com/weedge/pipeline-go/pkg/frames"
+	"github.com/weedge/pipeline-go/pkg/pipeline"
+	"github.com/weedge/pipeline-go/pkg/processors"
 )
 
 // SlowProcessor is a processor with an artificial delay.

@@ -6,8 +6,8 @@ import (
 	"log"
 	"sync"
 
-	"github.com/wuyong/pipeline-go/pkg/frames"
-	"github.com/wuyong/pipeline-go/pkg/processors"
+	"github.com/weedge/pipeline-go/pkg/frames"
+	"github.com/weedge/pipeline-go/pkg/processors"
 )
 
 // PipelineParams holds parameters for a pipeline task.
@@ -54,17 +54,17 @@ func (s *TaskSource) handleUpstreamFrame(frame frames.Frame) {
 
 // PipelineTask runs a pipeline.
 type PipelineTask struct {
-	ID       int
-	Name     string
-	pipeline processors.FrameProcessor
-	params   PipelineParams
-	finished bool
+	ID        int
+	Name      string
+	pipeline  processors.FrameProcessor
+	params    PipelineParams
+	finished  bool
 	downQueue chan frames.Frame
 	upQueue   chan frames.Frame
-	source   *TaskSource
-	ctx      context.Context
-	cancel   context.CancelFunc
-	wg       sync.WaitGroup
+	source    *TaskSource
+	ctx       context.Context
+	cancel    context.CancelFunc
+	wg        sync.WaitGroup
 }
 
 var taskCounter int
@@ -129,10 +129,10 @@ func (t *PipelineTask) processDownQueue() {
 	defer close(t.downQueue)
 
 	startFrame := frames.StartFrame{
-		AllowInterruptions:     t.params.AllowInterruptions,
-		EnableMetrics:          t.params.EnableMetrics,
-		EnableUsageMetrics:     t.params.EnableUsageMetrics,
-		ReportOnlyInitialTTFB:  t.params.ReportOnlyInitialTTFB,
+		AllowInterruptions:    t.params.AllowInterruptions,
+		EnableMetrics:         t.params.EnableMetrics,
+		EnableUsageMetrics:    t.params.EnableUsageMetrics,
+		ReportOnlyInitialTTFB: t.params.ReportOnlyInitialTTFB,
 	}
 	t.source.ProcessFrame(startFrame, processors.FrameDirectionDownstream)
 

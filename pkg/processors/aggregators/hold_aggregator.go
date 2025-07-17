@@ -4,9 +4,9 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/wuyong/pipeline-go/pkg/frames"
-	"github.com/wuyong/pipeline-go/pkg/notifiers"
-	"github.com/wuyong/pipeline-go/pkg/processors"
+	"github.com/weedge/pipeline-go/pkg/frames"
+	"github.com/weedge/pipeline-go/pkg/notifiers"
+	"github.com/weedge/pipeline-go/pkg/processors"
 )
 
 // HoldLastFrameAggregator holds the last frame of a specific type until signaled to release it.

@@ -1,6 +1,6 @@
 package serializers
 
-import "github.com/wuyong/pipeline-go/pkg/frames"
+import "github.com/weedge/pipeline-go/pkg/frames"
 
 // Serializer defines the interface for serializing and deserializing frames.
 type Serializer interface {

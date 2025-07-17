@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/wuyong/pipeline-go/pkg/frames"
-	"github.com/wuyong/pipeline-go/pkg/processors"
+	"github.com/weedge/pipeline-go/pkg/frames"
+	"github.com/weedge/pipeline-go/pkg/processors"
 )
 
 // WriterProcessor writes frames to an io.Writer.

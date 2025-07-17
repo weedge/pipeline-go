@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/wuyong/pipeline-go/pkg/frames"
+	"github.com/weedge/pipeline-go/pkg/frames"
 )
 
 const (
