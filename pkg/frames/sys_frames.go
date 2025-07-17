@@ -95,7 +95,7 @@ func NewMetricsFrame() *MetricsFrame {
 }
 
 func (f *MetricsFrame) String() string {
-	return fmt.Sprintf("%s ttfb:%v | processing:%v | tokens:%v | characters:%v",
+	return fmt.Sprintf("%s ttfb:%+v | processing:%+v | tokens:%+v | characters:%+v",
 		f.Name(), f.TTFB, f.Processing, f.Tokens, f.Characters)
 }
 

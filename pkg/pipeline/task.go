@@ -42,7 +42,7 @@ func (s *TaskSource) ProcessFrame(frame frames.Frame, direction processors.Frame
 
 func (s *TaskSource) handleUpstreamFrame(frame frames.Frame) {
 	if errFrame, ok := frame.(frames.ErrorFrame); ok {
-		log.Printf("Error running app: %v", errFrame.Error)
+		log.Printf("Error running app: %+v", errFrame.Error)
 		if errFrame.Fatal {
 			// Cancel all tasks downstream.
 			s.PushFrame(frames.CancelFrame{}, processors.FrameDirectionDownstream)
@@ -101,7 +101,7 @@ func (t *PipelineTask) HasFinished() bool {
 
 func (t *PipelineTask) StopWhenDone() {
 	log.Printf("Task %s scheduled to stop when done", t.Name)
-	t.QueueFrame(frames.EndFrame{})
+	t.QueueFrame(frames.NewEndFrame())
 }
 
 func (t *PipelineTask) Cancel() {
@@ -116,6 +116,7 @@ func (t *PipelineTask) Run() {
 	go t.processUpQueue()
 	t.wg.Wait()
 	t.finished = true
+	log.Printf("%s Run Finished", t.Name)
 }
 
 func (t *PipelineTask) QueueFrame(frame frames.Frame) {
@@ -125,10 +126,9 @@ func (t *PipelineTask) QueueFrame(frame frames.Frame) {
 func (t *PipelineTask) processDownQueue() {
 	defer t.wg.Done()
 	defer t.pipeline.Cleanup()
-	defer t.cancel() // Signal other goroutines to stop when this one is done.
 	defer close(t.downQueue)
 
-	startFrame := frames.StartFrame{
+	startFrame := &frames.StartFrame{
 		AllowInterruptions:    t.params.AllowInterruptions,
 		EnableMetrics:         t.params.EnableMetrics,
 		EnableUsageMetrics:    t.params.EnableUsageMetrics,
@@ -136,20 +136,22 @@ func (t *PipelineTask) processDownQueue() {
 	}
 	t.source.ProcessFrame(startFrame, processors.FrameDirectionDownstream)
 
-	running := true
-	for running {
+	for {
 		select {
 		case <-t.ctx.Done():
+			//log.Println("processDownQueue Done")
 			return
 		case frame, ok := <-t.downQueue:
 			if !ok {
-				running = false
-				break
+				//log.Println("downQueue is close, processDownQueue Done")
+				return
 			}
 			t.source.ProcessFrame(frame, processors.FrameDirectionDownstream)
 			switch frame.(type) {
-			case frames.StopTaskFrame, frames.EndFrame:
-				running = false
+			case *frames.StopTaskFrame, *frames.EndFrame, frames.StopTaskFrame, frames.EndFrame:
+				t.cancel()
+				//log.Printf("get %T, processDownQueue Done", frame)
+				return
 			}
 		}
 	}
@@ -161,9 +163,11 @@ func (t *PipelineTask) processUpQueue() {
 	for {
 		select {
 		case <-t.ctx.Done():
+			//log.Println("processUpQueue Done")
 			return
 		case frame, ok := <-t.upQueue:
 			if !ok {
+				//log.Println("upQueue is close, processUpQueue Done")
 				return
 			}
 			if _, ok := frame.(frames.StopTaskFrame); ok {

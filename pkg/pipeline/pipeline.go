@@ -1,6 +1,9 @@
 package pipeline
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/weedge/pipeline-go/pkg/frames"
 	"github.com/weedge/pipeline-go/pkg/processors"
 )
@@ -18,6 +21,7 @@ func NewPipelineSource(upstreamPushFrame func(frame frames.Frame, direction proc
 }
 
 func (s *PipelineSource) ProcessFrame(frame frames.Frame, direction processors.FrameDirection) {
+	//log.Printf("PipelineSource %T, %d", frame, direction)
 	switch direction {
 	case processors.FrameDirectionUpstream:
 		s.upstreamPushFrame(frame, direction)
@@ -39,6 +43,7 @@ func NewPipelineSink(downstreamPushFrame func(frame frames.Frame, direction proc
 }
 
 func (s *PipelineSink) ProcessFrame(frame frames.Frame, direction processors.FrameDirection) {
+	//log.Printf("PipelineSink %T, %d", frame, direction)
 	switch direction {
 	case processors.FrameDirectionUpstream:
 		s.PushFrame(frame, direction)
@@ -99,4 +104,18 @@ func (p *Pipeline) linkProcessors() {
 		prev.Link(curr)
 		prev = curr
 	}
+}
+
+func (p *Pipeline) String() string {
+	var names []string
+	for _, proc := range p.processors {
+		if proc == p.source {
+			names = append(names, "Source")
+		} else if proc == p.sink {
+			names = append(names, "Sink")
+		} else {
+			names = append(names, fmt.Sprintf("%T", proc))
+		}
+	}
+	return "Pipeline: " + strings.Join(names, " -> ")
 }

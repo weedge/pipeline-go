@@ -33,7 +33,7 @@ func TestSerializers(t *testing.T) {
 					// Serialize the frame
 					serializedData, err := serializer.Serialize(originalFrame)
 					if err != nil {
-						t.Fatalf("Serialize() error = %v", err)
+						t.Fatalf("Serialize() error = %+v", err)
 					}
 					if serializedData == nil {
 						t.Fatalf("Serialize() returned nil data")
@@ -42,7 +42,7 @@ func TestSerializers(t *testing.T) {
 					// Deserialize the data
 					deserializedFrame, err := serializer.Deserialize(serializedData)
 					if err != nil {
-						t.Fatalf("Deserialize() error = %v", err)
+						t.Fatalf("Deserialize() error = %+v", err)
 					}
 					if deserializedFrame == nil {
 						t.Fatalf("Deserialize() returned nil frame")
