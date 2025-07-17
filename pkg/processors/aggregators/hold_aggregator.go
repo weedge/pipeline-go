@@ -9,25 +9,86 @@ import (
 	"github.com/weedge/pipeline-go/pkg/processors"
 )
 
-// HoldLastFrameAggregator holds the last frame of a specific type until signaled to release it.
-type HoldLastFrameAggregator struct {
+// HoldFramesAggregator holds all frames of a specific type until signaled to release them.
+type HoldFramesAggregator struct {
 	processors.BaseProcessor
-	holdFrameType reflect.Type
-	notifier      notifiers.Notifier
-	lastFrame     frames.Frame
-	lock          sync.Mutex
-	once          sync.Once
+	holdFrameTypes []reflect.Type
+	notifier       notifiers.Notifier
+	heldFrames     []frames.Frame
+	lock           sync.Mutex
+	once           sync.Once
 }
 
-// NewHoldLastFrameAggregator creates a new HoldLastFrameAggregator.
-func NewHoldLastFrameAggregator(frameType reflect.Type, notifier notifiers.Notifier) *HoldLastFrameAggregator {
-	return &HoldLastFrameAggregator{
-		holdFrameType: frameType,
-		notifier:      notifier,
+// NewHoldFramesAggregator creates a new HoldFramesAggregator.
+func NewHoldFramesAggregator(frameTypes []interface{}, notifier notifiers.Notifier) *HoldFramesAggregator {
+	var types []reflect.Type
+	for _, t := range frameTypes {
+		types = append(types, reflect.TypeOf(t))
+	}
+	return &HoldFramesAggregator{
+		holdFrameTypes: types,
+		notifier:       notifier,
 	}
 }
 
-// startReleaseListener starts a goroutine that waits for a notification.
+func (a *HoldFramesAggregator) startReleaseListener(direction processors.FrameDirection) {
+	go func() {
+		for range a.notifier.Wait() {
+			a.lock.Lock()
+			for _, frame := range a.heldFrames {
+				a.PushFrame(frame, direction)
+			}
+			a.heldFrames = nil // Clear after releasing
+			a.lock.Unlock()
+		}
+	}()
+}
+
+func (a *HoldFramesAggregator) ProcessFrame(frame frames.Frame, direction processors.FrameDirection) {
+	a.once.Do(func() {
+		a.startReleaseListener(direction)
+	})
+
+	isHeldType := false
+	frameType := reflect.TypeOf(frame)
+	for _, t := range a.holdFrameTypes {
+		if frameType == t {
+			isHeldType = true
+			break
+		}
+	}
+
+	if isHeldType {
+		a.lock.Lock()
+		a.heldFrames = append(a.heldFrames, frame)
+		a.lock.Unlock()
+	} else {
+		a.PushFrame(frame, direction)
+	}
+}
+
+// HoldLastFrameAggregator holds the last frame of a specific type until signaled to release it.
+type HoldLastFrameAggregator struct {
+	processors.BaseProcessor
+	holdFrameTypes []reflect.Type
+	notifier       notifiers.Notifier
+	lastFrame      frames.Frame
+	lock           sync.Mutex
+	once           sync.Once
+}
+
+// NewHoldLastFrameAggregator creates a new HoldLastFrameAggregator.
+func NewHoldLastFrameAggregator(frameTypes []interface{}, notifier notifiers.Notifier) *HoldLastFrameAggregator {
+	var types []reflect.Type
+	for _, t := range frameTypes {
+		types = append(types, reflect.TypeOf(t))
+	}
+	return &HoldLastFrameAggregator{
+		holdFrameTypes: types,
+		notifier:       notifier,
+	}
+}
+
 func (a *HoldLastFrameAggregator) startReleaseListener(direction processors.FrameDirection) {
 	go func() {
 		for range a.notifier.Wait() {
@@ -42,18 +103,24 @@ func (a *HoldLastFrameAggregator) startReleaseListener(direction processors.Fram
 }
 
 func (a *HoldLastFrameAggregator) ProcessFrame(frame frames.Frame, direction processors.FrameDirection) {
-	// Start the release listener only once.
 	a.once.Do(func() {
 		a.startReleaseListener(direction)
 	})
 
-	// Check if the incoming frame is of the type we want to hold.
-	if reflect.TypeOf(frame) == a.holdFrameType {
+	isHeldType := false
+	frameType := reflect.TypeOf(frame)
+	for _, t := range a.holdFrameTypes {
+		if frameType == t {
+			isHeldType = true
+			break
+		}
+	}
+
+	if isHeldType {
 		a.lock.Lock()
 		a.lastFrame = frame
 		a.lock.Unlock()
 	} else {
-		// Pass all other frames through immediately.
 		a.PushFrame(frame, direction)
 	}
 }

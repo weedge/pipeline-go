@@ -53,7 +53,12 @@ func (a *GatedAggregator) ProcessFrame(frame frames.Frame, direction processors.
 		return
 	}
 
-	// Determine new gate state.
+	// First, process the frame based on the current gate state.
+	if a.isGateOpen {
+		a.PushFrame(frame, direction)
+	}
+
+	// Then, update the gate state for the next frame.
 	if a.isGateOpen {
 		if a.gateCloseFn(frame) {
 			a.isGateOpen = false
@@ -62,20 +67,5 @@ func (a *GatedAggregator) ProcessFrame(frame frames.Frame, direction processors.
 		if a.gateOpenFn(frame) {
 			a.isGateOpen = true
 		}
-	}
-
-	// Process based on state.
-	if a.isGateOpen {
-		// Push the frame that opened the gate.
-		a.PushFrame(frame, direction)
-		// Push all accumulated frames.
-		for _, f := range a.accumulator {
-			a.PushFrame(f, direction)
-		}
-		// Clear the accumulator.
-		a.accumulator = make([]frames.Frame, 0)
-	} else {
-		// Gate is closed, accumulate the frame.
-		a.accumulator = append(a.accumulator, frame)
 	}
 }
