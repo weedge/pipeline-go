@@ -2,30 +2,25 @@ package main
 
 import (
 	"log"
-	"strings"
+	"reflect"
 	"time"
 
 	"github.com/wuyong/pipeline-go/pkg/frames"
 	"github.com/wuyong/pipeline-go/pkg/pipeline"
 	"github.com/wuyong/pipeline-go/pkg/processors"
-	"github.com/wuyong/pipeline-go/pkg/processors/filters"
+	"github.com/wuyong/pipeline-go/pkg/processors/aggregators"
 )
 
 func main() {
-	log.Println("Starting filter example")
+	log.Println("Starting hold aggregator example")
 
-	// 1. Create a filter and a logger
-	filter := filters.NewFrameFilter(func(frame frames.Frame) bool {
-		if tf, ok := frame.(*frames.TextFrame); ok {
-			return strings.Contains(tf.Text, "keep")
-		}
-		return false
-	})
+	// 1. Create a hold aggregator and a logger
+	aggregator := aggregators.NewHoldLastFrameAggregator(reflect.TypeOf(&frames.TextFrame{}))
 	logger := processors.NewLoggerProcessor("OutputLogger")
 
 	// 2. Create a pipeline
 	pl := pipeline.NewPipeline(
-		[]processors.FrameProcessor{filter, logger},
+		[]processors.FrameProcessor{aggregator, logger},
 		nil, nil,
 	)
 
@@ -38,8 +33,17 @@ func main() {
 
 	// 5. Queue some frames
 	log.Println("Queueing frames")
-	task.QueueFrame(&frames.TextFrame{Text: "this one should be dropped"})
-	task.QueueFrame(&frames.TextFrame{Text: "this one we should keep"})
+	task.QueueFrame(&frames.TextFrame{Text: "this is the first frame, it will be replaced"})
+	task.QueueFrame(&frames.TextFrame{Text: "this is the last frame, it will be held"})
+
+	// 6. Wait a moment, then release the held frame
+	log.Println("Waiting to release...")
+	time.Sleep(500 * time.Millisecond)
+	log.Println("Releasing frame!")
+	aggregator.Release()
+	time.Sleep(100 * time.Millisecond) // Give time for the released frame to be processed.
+
+	// 7. End the pipeline
 	task.QueueFrame(frames.EndFrame{})
 
 	// Wait for the task to finish
@@ -47,5 +51,5 @@ func main() {
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	log.Println("Filter example finished")
+	log.Println("Hold aggregator example finished")
 }
