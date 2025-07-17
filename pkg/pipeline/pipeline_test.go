@@ -2,10 +2,13 @@ package pipeline
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/weedge/pipeline-go/pkg/frames"
 	"github.com/weedge/pipeline-go/pkg/processors"
+	"github.com/weedge/pipeline-go/pkg/processors/filters"
 )
 
 func TestSimple(t *testing.T) {
@@ -60,4 +63,79 @@ func TestSyncParallelPipeline(t *testing.T) {
 	task.QueueFrame(frames.NewEndFrame())
 
 	task.Run()
+}
+
+func TestFunctionFilter(t *testing.T) {
+	text := "你好"
+
+	textFilter := func(frame frames.Frame) bool {
+		if textFrame, ok := frame.(*frames.TextFrame); ok {
+			if textFrame.Text == text {
+				return false
+			}
+		}
+		return true
+	}
+
+	imageFilter := func(frame frames.Frame) bool {
+		if _, ok := frame.(*frames.ImageRawFrame); ok {
+			return false
+		}
+		return true
+	}
+
+	pipeline := NewPipeline([]processors.FrameProcessor{
+		filters.NewFrameFilter(textFilter),
+		filters.NewCheckFilter(t, text, false),
+		filters.NewFrameFilter(imageFilter),
+		filters.NewCheckFilter(t, text, true),
+	}, nil, nil)
+
+	task := NewPipelineTask(pipeline, PipelineParams{})
+
+	task.QueueFrame(frames.NewTextFrame(text))
+	task.QueueFrame(frames.NewTextFrame("你好!"))
+	task.QueueFrame(frames.NewImageRawFrame([]byte{}, frames.ImageSize{Width: 0, Height: 0}, "PNG", "RGB"))
+	task.QueueFrame(frames.NewAudioRawFrame([]byte{}, 16000, 1, 2))
+	task.QueueFrame(frames.NewEndFrame())
+
+	task.Run()
+}
+
+func TestTypeFilter(t *testing.T) {
+	var collectedFrames []frames.Frame
+	var mu sync.Mutex
+
+	collector := processors.NewOutputProcessor(func(frame frames.Frame) {
+		// We don't want to collect control frames
+		switch frame.(type) {
+		case *frames.StartFrame, *frames.EndFrame:
+			return
+		}
+		mu.Lock()
+		defer mu.Unlock()
+		collectedFrames = append(collectedFrames, frame)
+	})
+
+	pipeline := NewPipeline([]processors.FrameProcessor{
+		// This filter should only allow TextFrames and AudioRawFrames to pass.
+		filters.NewTypeFilter([]interface{}{&frames.TextFrame{}, &frames.AudioRawFrame{}}),
+		collector,
+	}, nil, nil)
+
+	task := NewPipelineTask(pipeline, PipelineParams{})
+
+	task.QueueFrame(frames.NewTextFrame("one"))
+	task.QueueFrame(frames.NewImageRawFrame([]byte{}, frames.ImageSize{Width: 0, Height: 0}, "PNG", "RGB"))
+	task.QueueFrame(frames.NewAudioRawFrame([]byte{}, 16000, 1, 2))
+	task.QueueFrame(frames.NewTextFrame("two"))
+	task.QueueFrame(frames.NewEndFrame())
+
+	task.Run()
+
+	// Assert that only the correct frames were collected
+	assert.Len(t, collectedFrames, 3)
+	assert.IsType(t, &frames.TextFrame{}, collectedFrames[0])
+	assert.IsType(t, &frames.AudioRawFrame{}, collectedFrames[1])
+	assert.IsType(t, &frames.TextFrame{}, collectedFrames[2])
 }
