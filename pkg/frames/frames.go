@@ -34,3 +34,13 @@ type MetricsFrame struct {
 
 // SyncFrame is a control frame used for synchronization.
 type SyncFrame struct{}
+
+// TextFrame is a data frame containing text.
+type TextFrame struct {
+	Text string
+}
+
+// BytesFrame is a data frame containing raw bytes.
+type BytesFrame struct {
+	Bytes []byte
+}
