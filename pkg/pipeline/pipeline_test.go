@@ -15,7 +15,7 @@ import (
 )
 
 func TestSimple(t *testing.T) {
-	pipeline := NewPipeline([]processors.FrameProcessor{
+	pipeline := NewPipeline([]processors.IFrameProcessor{
 		processors.NewFrameTraceLogger("simple", 0),
 	}, nil, nil)
 	fmt.Println(pipeline)
@@ -31,11 +31,11 @@ func TestSimple(t *testing.T) {
 }
 
 func TestParallelPipeline(t *testing.T) {
-	pipeline := NewPipeline([]processors.FrameProcessor{
+	pipeline := NewPipeline([]processors.IFrameProcessor{
 		processors.NewFrameTraceLogger("0", 0),
 		NewParallelPipeline(
-			[]processors.FrameProcessor{processors.NewFrameTraceLogger("1.0", 1000)},
-			[]processors.FrameProcessor{processors.NewFrameTraceLogger("1.1", 0)},
+			[]processors.IFrameProcessor{processors.NewFrameTraceLogger("1.0", 1000)},
+			[]processors.IFrameProcessor{processors.NewFrameTraceLogger("1.1", 0)},
 		),
 		processors.NewFrameTraceLogger("3", 0),
 	}, nil, nil)
@@ -50,11 +50,11 @@ func TestParallelPipeline(t *testing.T) {
 }
 
 func TestSyncParallelPipeline(t *testing.T) {
-	pipeline := NewPipeline([]processors.FrameProcessor{
+	pipeline := NewPipeline([]processors.IFrameProcessor{
 		processors.NewFrameTraceLogger("0", 0),
 		NewSyncParallelPipeline(
-			NewPipeline([]processors.FrameProcessor{processors.NewFrameTraceLogger("1.0", 1000)}, nil, nil),
-			NewPipeline([]processors.FrameProcessor{processors.NewFrameTraceLogger("1.1", 0)}, nil, nil),
+			NewPipeline([]processors.IFrameProcessor{processors.NewFrameTraceLogger("1.0", 1000)}, nil, nil),
+			NewPipeline([]processors.IFrameProcessor{processors.NewFrameTraceLogger("1.1", 0)}, nil, nil),
 		),
 		processors.NewFrameTraceLogger("3", 0),
 	}, nil, nil)
@@ -87,7 +87,7 @@ func TestFunctionFilter(t *testing.T) {
 		return true
 	}
 
-	pipeline := NewPipeline([]processors.FrameProcessor{
+	pipeline := NewPipeline([]processors.IFrameProcessor{
 		filters.NewFrameFilter(textFilter),
 		filters.NewCheckFilter(t, text, false),
 		filters.NewFrameFilter(imageFilter),
@@ -120,7 +120,7 @@ func TestTypeFilter(t *testing.T) {
 		collectedFrames = append(collectedFrames, frame)
 	})
 
-	pipeline := NewPipeline([]processors.FrameProcessor{
+	pipeline := NewPipeline([]processors.IFrameProcessor{
 		// This filter should only allow TextFrames and AudioRawFrames to pass.
 		filters.NewTypeFilter([]interface{}{&frames.TextFrame{}, &frames.AudioRawFrame{}}),
 		collector,
@@ -161,7 +161,7 @@ func TestHoldFramesAggregator(t *testing.T) {
 		notifier,
 	)
 
-	pipeline := NewPipeline([]processors.FrameProcessor{
+	pipeline := NewPipeline([]processors.IFrameProcessor{
 		aggregator,
 		filters.NewFrameFilter(wakeNotifierFilter),
 		processors.NewPrintOutFrameProcessor(),
@@ -201,7 +201,7 @@ func TestHoldLastFrameAggregator(t *testing.T) {
 		notifier,
 	)
 
-	pipeline := NewPipeline([]processors.FrameProcessor{
+	pipeline := NewPipeline([]processors.IFrameProcessor{
 		aggregator,
 		filters.NewFrameFilter(wakeNotifierFilter),
 		processors.NewPrintOutFrameProcessor(),
@@ -251,7 +251,7 @@ func TestGatedAggregator(t *testing.T) {
 
 	aggregator := aggregators.NewGatedAggregator(gateOpenFn, gateCloseFn, false, processors.FrameDirectionDownstream)
 
-	pipeline := NewPipeline([]processors.FrameProcessor{
+	pipeline := NewPipeline([]processors.IFrameProcessor{
 		aggregator,
 		collector,
 	}, nil, nil)

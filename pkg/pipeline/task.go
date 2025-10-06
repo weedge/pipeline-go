@@ -21,7 +21,7 @@ type PipelineParams struct {
 
 // Source is a processor that handles upstream frames for a task.
 type TaskSource struct {
-	processors.BaseProcessor
+	processors.FrameProcessor
 	upQueue chan frames.Frame
 }
 
@@ -41,7 +41,7 @@ func (s *TaskSource) ProcessFrame(frame frames.Frame, direction processors.Frame
 }
 
 func (s *TaskSource) handleUpstreamFrame(frame frames.Frame) {
-	if errFrame, ok := frame.(frames.ErrorFrame); ok {
+	if errFrame, ok := frame.(*frames.ErrorFrame); ok {
 		log.Printf("Error running app: %+v", errFrame.Error)
 		if errFrame.Fatal {
 			// Cancel all tasks downstream.
@@ -56,7 +56,7 @@ func (s *TaskSource) handleUpstreamFrame(frame frames.Frame) {
 type PipelineTask struct {
 	ID        int
 	Name      string
-	pipeline  processors.FrameProcessor
+	pipeline  processors.IFrameProcessor
 	params    PipelineParams
 	finished  bool
 	downQueue chan frames.Frame
@@ -77,7 +77,7 @@ func nextTaskID() int {
 	return taskCounter
 }
 
-func NewPipelineTask(pipeline processors.FrameProcessor, params PipelineParams) *PipelineTask {
+func NewPipelineTask(pipeline processors.IFrameProcessor, params PipelineParams) *PipelineTask {
 	id := nextTaskID()
 	ctx, cancel := context.WithCancel(context.Background())
 	task := &PipelineTask{
@@ -129,6 +129,9 @@ func (t *PipelineTask) processDownQueue() {
 	defer close(t.downQueue)
 
 	startFrame := &frames.StartFrame{
+		ControlFrame: &frames.ControlFrame{
+			BaseFrame: frames.NewBaseFrameWithName("StartFrame"),
+		},
 		AllowInterruptions:    t.params.AllowInterruptions,
 		EnableMetrics:         t.params.EnableMetrics,
 		EnableUsageMetrics:    t.params.EnableUsageMetrics,

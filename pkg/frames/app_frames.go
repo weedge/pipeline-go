@@ -9,6 +9,6 @@ type AppFrame struct {
 
 func NewAppFrame() *AppFrame {
 	return &AppFrame{
-		BaseFrame: NewBaseFrame(reflect.TypeOf(AppFrame{}).Name()),
+		BaseFrame: NewBaseFrameWithName(reflect.TypeOf(AppFrame{}).Name()),
 	}
 }

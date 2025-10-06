@@ -11,7 +11,7 @@ import (
 
 // HoldFramesAggregator holds all frames of a specific type until signaled to release them.
 type HoldFramesAggregator struct {
-	processors.BaseProcessor
+	processors.FrameProcessor
 	holdFrameTypes []reflect.Type
 	notifier       notifiers.Notifier
 	heldFrames     []frames.Frame
@@ -69,7 +69,7 @@ func (a *HoldFramesAggregator) ProcessFrame(frame frames.Frame, direction proces
 
 // HoldLastFrameAggregator holds the last frame of a specific type until signaled to release it.
 type HoldLastFrameAggregator struct {
-	processors.BaseProcessor
+	processors.FrameProcessor
 	holdFrameTypes []reflect.Type
 	notifier       notifiers.Notifier
 	lastFrame      frames.Frame

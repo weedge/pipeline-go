@@ -9,12 +9,12 @@ import (
 
 // SyncParallelPipeline runs multiple pipelines in parallel and synchronizes their output.
 type SyncParallelPipeline struct {
-	processors.BaseProcessor
-	pipelines []processors.FrameProcessor
+	processors.FrameProcessor
+	pipelines []processors.IFrameProcessor
 }
 
 // NewSyncParallelPipeline creates a new SyncParallelPipeline.
-func NewSyncParallelPipeline(pipelines ...processors.FrameProcessor) *SyncParallelPipeline {
+func NewSyncParallelPipeline(pipelines ...processors.IFrameProcessor) *SyncParallelPipeline {
 	if len(pipelines) == 0 {
 		panic("SyncParallelPipeline needs at least one pipeline")
 	}
@@ -32,7 +32,7 @@ func (spp *SyncParallelPipeline) ProcessFrame(frame frames.Frame, direction proc
 	// Fan out: Start a goroutine for each pipeline.
 	for _, p := range spp.pipelines {
 		wg.Add(1)
-		go func(pl processors.FrameProcessor) {
+		go func(pl processors.IFrameProcessor) {
 			defer wg.Done()
 
 			// Create a temporary processor to intercept the result from the pipeline.
@@ -85,7 +85,7 @@ func (spp *SyncParallelPipeline) ProcessFrame(frame frames.Frame, direction proc
 
 // resultInterceptor is a helper processor to capture the output of a pipeline.
 type resultInterceptor struct {
-	processors.BaseProcessor
+	processors.FrameProcessor
 	onFrame func(frame frames.Frame, direction processors.FrameDirection)
 }
 

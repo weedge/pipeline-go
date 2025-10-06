@@ -7,7 +7,7 @@ import (
 
 // FrameFilter drops frames based on a filter function.
 type FrameFilter struct {
-	processors.BaseProcessor
+	processors.FrameProcessor
 	filterFn func(frame frames.Frame) bool
 }
 
@@ -22,7 +22,7 @@ func NewFrameFilter(filterFn func(frame frames.Frame) bool) *FrameFilter {
 // isControlFrame checks if a frame is a control frame that should always pass through.
 func (f *FrameFilter) isControlFrame(frame frames.Frame) bool {
 	switch frame.(type) {
-	case frames.StartFrame, frames.EndFrame, frames.CancelFrame, frames.ErrorFrame, frames.StopTaskFrame, frames.MetricsFrame, frames.SyncFrame:
+	case *frames.StartFrame, *frames.EndFrame, *frames.CancelFrame, *frames.ErrorFrame, *frames.StopTaskFrame, *frames.MetricsFrame, *frames.SyncFrame:
 		return true
 	default:
 		return false

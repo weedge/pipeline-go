@@ -10,7 +10,7 @@ import (
 
 // ReaderProcessor reads from an io.Reader, creates frames, and pushes them downstream.
 type ReaderProcessor struct {
-	processors.BaseProcessor
+	processors.FrameProcessor
 	reader io.Reader
 }
 

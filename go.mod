@@ -1,6 +1,6 @@
 module github.com/weedge/pipeline-go
 
-go 1.20
+go 1.22
 
 replace github.com/weedge/pipeline-go => ./
 

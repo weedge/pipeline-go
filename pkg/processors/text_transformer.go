@@ -6,7 +6,7 @@ import (
 
 // StatelessTextTransformer applies a function to the text of a TextFrame.
 type StatelessTextTransformer struct {
-	BaseProcessor
+	FrameProcessor
 	transformFn func(string) string
 }
 

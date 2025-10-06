@@ -7,7 +7,7 @@ import (
 
 // NullFilter drops all frames that pass through it, except for control frames.
 type NullFilter struct {
-	processors.BaseProcessor
+	processors.FrameProcessor
 }
 
 // NewNullFilter creates a new NullFilter.
@@ -19,7 +19,9 @@ func NewNullFilter() *NullFilter {
 func (f *NullFilter) ProcessFrame(frame frames.Frame, direction processors.FrameDirection) {
 	// Only pass control frames through.
 	switch frame.(type) {
-	case frames.StartFrame, frames.EndFrame, frames.CancelFrame, frames.ErrorFrame, frames.StopTaskFrame, frames.MetricsFrame, frames.SyncFrame:
+	case *frames.StartFrame, *frames.EndFrame, *frames.CancelFrame, *frames.StopTaskFrame, *frames.MetricsFrame, *frames.SyncFrame:
+		f.PushFrame(frame, direction)
+	case *frames.ErrorFrame: // ErrorFrame has pointer receiver for String method
 		f.PushFrame(frame, direction)
 	default:
 		// Drop all other frames.

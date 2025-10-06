@@ -4,7 +4,7 @@ import "github.com/weedge/pipeline-go/pkg/frames"
 
 // OutputProcessor calls a callback function for each frame.
 type OutputProcessor struct {
-	BaseProcessor
+	FrameProcessor
 	callback func(frames.Frame)
 }
 

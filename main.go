@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"time"
 
 	"github.com/weedge/pipeline-go/pkg/frames"
 	"github.com/weedge/pipeline-go/pkg/pipeline"
@@ -12,7 +13,7 @@ import (
 func main() {
 	log.Println("Starting pipeline example...")
 
-	// 1. Create the processors
+	// 1. Create the processo
 	// This filter will only allow frames that are NOT ImageRawFrames to pass
 	imageFilter := filters.NewFrameFilter(func(frame frames.Frame) bool {
 		if _, ok := frame.(*frames.ImageRawFrame); ok {
@@ -26,7 +27,7 @@ func main() {
 
 	// 2. Create a new pipeline
 	myPipeline := pipeline.NewPipeline(
-		[]processors.FrameProcessor{
+		[]processors.IFrameProcessor{
 			imageFilter,
 			logger,
 		},
@@ -49,6 +50,7 @@ func main() {
 
 	// 5. Send a stop frame to terminate the pipeline
 	task.QueueFrame(frames.NewStopTaskFrame())
+	time.Sleep(1 * time.Second)
 
 	log.Println("Pipeline finished.")
 }

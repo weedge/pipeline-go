@@ -9,7 +9,7 @@ import (
 
 // TypeFilter drops frames based on their type.
 type TypeFilter struct {
-	processors.BaseProcessor
+	processors.FrameProcessor
 	includeTypes []reflect.Type
 }
 

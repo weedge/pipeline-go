@@ -7,7 +7,7 @@ import (
 
 // GatedAggregator accumulates frames and releases them when a gate opens.
 type GatedAggregator struct {
-	processors.BaseProcessor
+	processors.FrameProcessor
 	gateOpenFn  func(frames.Frame) bool
 	gateCloseFn func(frames.Frame) bool
 	isGateOpen  bool
@@ -33,7 +33,7 @@ func NewGatedAggregator(
 // isControlFrame checks if a frame is a control frame that should always pass through.
 func (a *GatedAggregator) isControlFrame(frame frames.Frame) bool {
 	switch frame.(type) {
-	case frames.StartFrame, frames.EndFrame, frames.CancelFrame, frames.ErrorFrame, frames.StopTaskFrame, frames.MetricsFrame, frames.SyncFrame:
+	case *frames.StartFrame, *frames.EndFrame, *frames.CancelFrame, *frames.ErrorFrame, *frames.StopTaskFrame, *frames.MetricsFrame, *frames.SyncFrame:
 		return true
 	default:
 		return false

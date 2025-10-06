@@ -8,7 +8,7 @@ import (
 )
 
 type FrameTraceLogger struct {
-	BaseProcessor
+	FrameProcessor
 	tag     string
 	delayMs int
 }
