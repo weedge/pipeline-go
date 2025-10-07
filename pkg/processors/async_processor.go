@@ -14,6 +14,7 @@ type AsyncFrameProcessor struct {
 	*FrameProcessor
 	ctx            context.Context
 	cancel         context.CancelFunc
+	pushQueueSize  int
 	pushQueue      chan pushItem
 	pushFrameTask  *sync.WaitGroup
 	interruptionMu sync.Mutex
@@ -27,12 +28,18 @@ type pushItem struct {
 
 // NewAsyncFrameProcessor creates a new AsyncFrameProcessor.
 func NewAsyncFrameProcessor(name string) *AsyncFrameProcessor {
+	pushQueueSize := 128
+	return NewAsyncFrameProcessorWithPushQueueSize(name, pushQueueSize)
+}
+
+func NewAsyncFrameProcessorWithPushQueueSize(name string, pushQueueSize int) *AsyncFrameProcessor {
 	ctx, cancel := context.WithCancel(context.Background())
 	p := &AsyncFrameProcessor{
 		FrameProcessor: NewFrameProcessor(name),
 		ctx:            ctx,
 		cancel:         cancel,
-		pushQueue:      make(chan pushItem, 128), // Buffer size similar to Python's asyncio.Queue
+		pushQueueSize:  pushQueueSize,
+		pushQueue:      make(chan pushItem, pushQueueSize), // Buffer size similar to Python's asyncio.Queue
 		pushFrameTask:  &sync.WaitGroup{},
 	}
 	p.createPushTask()
@@ -45,12 +52,14 @@ func (p *AsyncFrameProcessor) ProcessFrame(frame frames.Frame, direction FrameDi
 	p.FrameProcessor.ProcessFrame(frame, direction)
 
 	// Handle interruption frames
-	if _, ok := frame.(frames.StartInterruptionFrame); ok {
+	switch frame.(type) {
+	case *frames.StartInterruptionFrame, frames.StartInterruptionFrame:
 		p.handleInterruptions(frame)
+	default:
+		// Queue the frame for asynchronous processing
+		p.queueFrame(frame, direction)
 	}
 
-	// Queue the frame for asynchronous processing
-	p.queueFrame(frame, direction)
 }
 
 // Cleanup implements the IFrameProcessor interface.
@@ -67,6 +76,12 @@ func (p *AsyncFrameProcessor) Cleanup() {
 
 // handleInterruptions handles interruption frames.
 func (p *AsyncFrameProcessor) handleInterruptions(frame frames.Frame) {
+	// out-of-band interruption handling
+	//if !p.allowInterruptions {
+	//	log.Printf("Warning: interruption frames are not allowed for processor %s", p.name)
+	//	return
+	//}
+
 	p.interruptionMu.Lock()
 	defer p.interruptionMu.Unlock()
 
@@ -86,6 +101,7 @@ func (p *AsyncFrameProcessor) handleInterruptions(frame frames.Frame) {
 	p.pushQueue = make(chan pushItem, 128)
 	p.pushFrameTask = &sync.WaitGroup{}
 	p.createPushTask()
+	log.Printf("AsyncFrameProcessor createPushTask is OK!")
 }
 
 // createPushTask creates a new push frame task.
@@ -116,8 +132,10 @@ func (p *AsyncFrameProcessor) pushFrameTaskHandler() {
 		case item, ok := <-p.pushQueue:
 			if !ok {
 				// Channel closed
+				log.Printf("%s push queue closed", p.name)
 				return
 			}
+			log.Printf("%s get %+v", p.name, item.frame.String())
 
 			// Push the frame
 			p.PushFrame(item.frame, item.direction)

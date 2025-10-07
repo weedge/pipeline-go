@@ -8,13 +8,13 @@ import (
 )
 
 type FrameTraceLogger struct {
-	FrameProcessor
+	*FrameProcessor
 	tag     string
 	delayMs int
 }
 
 func NewFrameTraceLogger(tag string, delayMs int) *FrameTraceLogger {
-	return &FrameTraceLogger{tag: tag, delayMs: delayMs}
+	return &FrameTraceLogger{FrameProcessor: NewFrameProcessor("FrameTraceLogger"), tag: tag, delayMs: delayMs}
 }
 
 func (l *FrameTraceLogger) ProcessFrame(frame frames.Frame, direction FrameDirection) {

@@ -15,7 +15,7 @@ type PipelineSource struct {
 }
 
 func NewPipelineSource(upstreamPushFrame func(frame frames.Frame, direction processors.FrameDirection)) *PipelineSource {
-	return &PipelineSource{
+	return &PipelineSource{ // new a default FrameProcessor
 		upstreamPushFrame: upstreamPushFrame,
 	}
 }
@@ -28,6 +28,10 @@ func (s *PipelineSource) ProcessFrame(frame frames.Frame, direction processors.F
 	case processors.FrameDirectionDownstream:
 		s.PushFrame(frame, direction)
 	}
+}
+
+func (s *PipelineSource) Name() string {
+	return "PipelineSource"
 }
 
 // PipelineSink is the exit point for frames from the pipeline.
@@ -50,6 +54,10 @@ func (s *PipelineSink) ProcessFrame(frame frames.Frame, direction processors.Fra
 	case processors.FrameDirectionDownstream:
 		s.downstreamPushFrame(frame, direction)
 	}
+}
+
+func (s *PipelineSink) Name() string {
+	return "PipelineSink"
 }
 
 // Pipeline is a sequence of FrameProcessors.
@@ -81,6 +89,27 @@ func NewPipeline(procs []processors.IFrameProcessor, up, down func(frames.Frame,
 	return p
 }
 
+func NewPipelineWithVerbose(procs []processors.IFrameProcessor, up, down func(frames.Frame, processors.FrameDirection), verbose bool) *Pipeline {
+	p := &Pipeline{}
+
+	upPush := p.PushFrame
+	if up != nil {
+		upPush = up
+	}
+
+	downPush := p.PushFrame
+	if down != nil {
+		downPush = down
+	}
+
+	p.source = NewPipelineSource(upPush)
+	p.sink = NewPipelineSink(downPush)
+	p.processors = append([]processors.IFrameProcessor{p.source}, procs...)
+	p.processors = append(p.processors, p.sink)
+	p.linkProcessorsWithVerbose(verbose)
+	return p
+}
+
 func (p *Pipeline) ProcessFrame(frame frames.Frame, direction processors.FrameDirection) {
 	switch direction {
 	case processors.FrameDirectionDownstream:
@@ -108,6 +137,20 @@ func (p *Pipeline) linkProcessors() {
 	}
 }
 
+func (p *Pipeline) linkProcessorsWithVerbose(verbose bool) {
+	if len(p.processors) == 0 {
+		return
+	}
+	prev := p.processors[0]
+	prev.SetVerbose(verbose)
+	for _, curr := range p.processors[1:] {
+		curr.SetVerbose(verbose)
+		prev.Link(curr)
+		curr.SetPrev(prev)
+		prev = curr
+	}
+}
+
 func (p *Pipeline) String() string {
 	var names []string
 	for _, proc := range p.processors {
@@ -120,5 +163,5 @@ func (p *Pipeline) String() string {
 			names = append(names, fmt.Sprintf("%T", proc))
 		}
 	}
-	return "Pipeline: " + strings.Join(names, " -> ")
+	return "Pipeline: " + strings.Join(names, " <-> ")
 }

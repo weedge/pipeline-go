@@ -32,7 +32,6 @@ func (p *mockProcessor) Link(next IFrameProcessor) {
 	if p.verbose {
 		log.Printf("%s(%T) -> %s(%T)", p.Name(), p, next.Name(), next)
 	}
-	//next.SetPrev(p) #ISSUE: don't use this,  pre FrameProcessor,not caller
 }
 
 // SetPrev sets the previous processor in the pipeline.

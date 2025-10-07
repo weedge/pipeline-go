@@ -36,6 +36,7 @@ type IFrameProcessor interface {
 	SetPrev(prev IFrameProcessor)
 	ProcessFrame(frame frames.Frame, direction FrameDirection)
 	Cleanup()
+	SetVerbose(verbose bool)
 }
 
 // FrameProcessor provides a base implementation for IFrameProcessor.
@@ -198,12 +199,12 @@ func (p *FrameProcessor) PushFrame(frame frames.Frame, direction FrameDirection)
 
 	if direction == FrameDirectionDownstream && p.next != nil {
 		if p.verbose {
-			log.Printf("Downstream %d Pushing %+v  %s -> %s (Calling ProcessFrame on next: %T)", direction, frame, p.name, p.next.Name(), p.next)
+			log.Printf("Downstream %d Pushing %+v  %s(%T) -> %s (Calling ProcessFrame on next: %T)", direction, frame, p.name, p, p.next.Name(), p.next)
 		}
 		p.next.ProcessFrame(frame, direction)
 	} else if direction == FrameDirectionUpstream && p.prev != nil {
 		if p.verbose {
-			log.Printf("Upstream %d Pushing %+v  %s -> %s (Calling ProcessFrame on prev: %T)", direction, frame, p.name, p.prev.Name(), p.prev)
+			log.Printf("Upstream %d Pushing %+v  %s(%T) -> %s (Calling ProcessFrame on prev: %T)", direction, frame, p.name, p, p.prev.Name(), p.prev)
 		}
 
 		// Check if prev is a mockProcessor with a custom prevProcessor field
