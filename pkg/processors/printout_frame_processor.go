@@ -8,7 +8,7 @@ import (
 
 // PrintOutFrameProcessor prints frames and can send control frames upstream.
 type PrintOutFrameProcessor struct {
-	BaseProcessor
+	FrameProcessor
 }
 
 // NewPrintOutFrameProcessor creates a new PrintOutFrameProcessor.
@@ -34,4 +34,9 @@ func (p *PrintOutFrameProcessor) ProcessFrame(frame frames.Frame, direction Fram
 		}
 	}
 	p.PushFrame(frame, direction)
+}
+
+// getActualProcessor returns the actual processor instance.
+func (p *PrintOutFrameProcessor) getActualProcessor() IFrameProcessor {
+	return p
 }

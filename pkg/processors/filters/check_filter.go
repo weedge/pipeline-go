@@ -9,10 +9,10 @@ import (
 
 // CheckFilter is a processor for testing that asserts certain conditions.
 type CheckFilter struct {
-	processors.BaseProcessor
-	t         *testing.T
-	text      string
-	checkImg  bool
+	processors.FrameProcessor
+	t        *testing.T
+	text     string
+	checkImg bool
 }
 
 // NewCheckFilter creates a new CheckFilter.

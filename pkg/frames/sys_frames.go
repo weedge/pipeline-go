@@ -2,7 +2,6 @@ package frames
 
 import (
 	"fmt"
-	"reflect"
 )
 
 // SystemFrame is a frame for system-level events.
@@ -12,7 +11,7 @@ type SystemFrame struct {
 
 func NewSystemFrame() *SystemFrame {
 	return &SystemFrame{
-		BaseFrame: NewBaseFrame(reflect.TypeOf(SystemFrame{}).Name()),
+		BaseFrame: NewBaseFrameWithName("SystemFrame"),
 	}
 }
 
@@ -23,7 +22,9 @@ type CancelFrame struct {
 
 func NewCancelFrame() *CancelFrame {
 	return &CancelFrame{
-		SystemFrame: NewSystemFrame(),
+		SystemFrame: &SystemFrame{
+			BaseFrame: NewBaseFrameWithName("CancelFrame"),
+		},
 	}
 }
 
@@ -36,9 +37,11 @@ type ErrorFrame struct {
 
 func NewErrorFrame(err error, fatal bool) *ErrorFrame {
 	return &ErrorFrame{
-		SystemFrame: NewSystemFrame(),
-		Error:       err,
-		Fatal:       fatal,
+		SystemFrame: &SystemFrame{
+			BaseFrame: NewBaseFrameWithName("ErrorFrame"),
+		},
+		Error: err,
+		Fatal: fatal,
 	}
 }
 
@@ -53,7 +56,9 @@ type StopTaskFrame struct {
 
 func NewStopTaskFrame() *StopTaskFrame {
 	return &StopTaskFrame{
-		SystemFrame: NewSystemFrame(),
+		SystemFrame: &SystemFrame{
+			BaseFrame: NewBaseFrameWithName("StopTaskFrame"),
+		},
 	}
 }
 
@@ -64,7 +69,9 @@ type StartInterruptionFrame struct {
 
 func NewStartInterruptionFrame() *StartInterruptionFrame {
 	return &StartInterruptionFrame{
-		SystemFrame: NewSystemFrame(),
+		SystemFrame: &SystemFrame{
+			BaseFrame: NewBaseFrameWithName("StartInterruptionFrame"),
+		},
 	}
 }
 
@@ -75,22 +82,44 @@ type StopInterruptionFrame struct {
 
 func NewStopInterruptionFrame() *StopInterruptionFrame {
 	return &StopInterruptionFrame{
-		SystemFrame: NewSystemFrame(),
+		SystemFrame: &SystemFrame{
+			BaseFrame: NewBaseFrameWithName("StopInterruptionFrame"),
+		},
 	}
 }
 
 // MetricsFrame contains metrics about the pipeline.
 type MetricsFrame struct {
 	*SystemFrame
-	TTFB       []map[string]interface{}
-	Processing []map[string]interface{}
-	Tokens     []map[string]interface{}
-	Characters []map[string]interface{}
+	TTFB       []map[string]any
+	Processing []map[string]any
+	Tokens     []map[string]any
+	Characters []map[string]any
 }
 
 func NewMetricsFrame() *MetricsFrame {
 	return &MetricsFrame{
 		SystemFrame: NewSystemFrame(),
+	}
+}
+
+// NewMetricsFrameWithTTFB creates a new MetricsFrame with TTFB metrics.
+func NewMetricsFrameWithTTFB(ttfb []map[string]interface{}) *MetricsFrame {
+	return &MetricsFrame{
+		SystemFrame: &SystemFrame{
+			BaseFrame: NewBaseFrameWithName("MetricsFrame"),
+		},
+		TTFB: ttfb,
+	}
+}
+
+// NewMetricsFrameWithProcessing creates a new MetricsFrame with processing metrics.
+func NewMetricsFrameWithProcessing(processing []map[string]interface{}) *MetricsFrame {
+	return &MetricsFrame{
+		SystemFrame: &SystemFrame{
+			BaseFrame: NewBaseFrameWithName("MetricsFrame"),
+		},
+		Processing: processing,
 	}
 }
 

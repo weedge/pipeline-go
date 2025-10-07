@@ -26,8 +26,10 @@ Pipeline-Go is a Go library for building flexible, concurrent data processing pi
 - **Rich Set of Processors**: Includes a variety of built-in processors for common tasks:
     - **Filtering**: `FrameFilter` (based on a function) and `TypeFilter` (based on frame type).
     - **Aggregation**: `SentenceAggregator`, `GatedAggregator`, `HoldFramesAggregator`, and `HoldLastFrameAggregator`.
-- **Extensible**: Easily create your own custom processors by implementing the `FrameProcessor` interface.
+- **Extensible**: Easily create your own custom processors by implementing the `IFrameProcessor` interface.
 - **Concurrency-Safe**: Designed with concurrency in mind, using Go channels and goroutines for asynchronous processing.
+- **Async Processing**: `AsyncFrameProcessor` enables asynchronous frame handling with interruption support.
+- **Metrics Collection**: Enhanced processors with built-in metrics collection for TTFB and processing time.
 
 ## Directory Structure
 
@@ -37,79 +39,38 @@ Pipeline-Go is a Go library for building flexible, concurrent data processing pi
 │   ├── frames/      # Defines all data and control frame types
 │   ├── notifiers/   # A simple channel-based notification system
 │   ├── pipeline/    # Core logic for Pipeline, PipelineTask, and parallel variants
-│   └── processors/  # All built-in FrameProcessor implementations
+│   └── processors/  # All built-in IFrameProcessor implementations
 ├── go.mod
 └── main.go        # An example executable
 ```
 
 ## Usage Example
+see [examples](./examples/)
 
-Here is a simple example of building a pipeline that filters out `ImageRawFrame`s and logs the remaining frames.
-
-```go
-package main
-
-import (
-	"log"
-
-	"github.com/weedge/pipeline-go/pkg/frames"
-	"github.com/weedge/pipeline-go/pkg/pipeline"
-	"github.com/weedge/pipeline-go/pkg/processors"
-	"github.com/weedge/pipeline-go/pkg/processors/filters"
-)
-
-func main() {
-	log.Println("Starting pipeline example...")
-
-	// 1. Create the processors
-	// This filter will only allow frames that are NOT ImageRawFrames to pass
-	imageFilter := filters.NewFrameFilter(func(frame frames.Frame) bool {
-		if _, ok := frame.(*frames.ImageRawFrame); ok {
-			return false // Drop the frame
-		}
-		return true // Keep the frame
-	})
-
-	// This logger will print any frame that it receives
-	logger := processors.NewFrameTraceLogger("output", 0)
-
-	// 2. Create a new pipeline
-	myPipeline := pipeline.NewPipeline(
-		[]processors.FrameProcessor{
-			imageFilter,
-			logger,
-		},
-		nil, nil,
-	)
-
-	// 3. Create and run a pipeline task
-	task := pipeline.NewPipelineTask(myPipeline, pipeline.PipelineParams{})
-	go task.Run()
-
-	// 4. Send frames to the pipeline
-	log.Println("Queueing TextFrame...")
-	task.QueueFrame(frames.NewTextFrame("Hello, world!"))
-
-	log.Println("Queueing ImageRawFrame (will be filtered out)...")
-	task.QueueFrame(frames.NewImageRawFrame([]byte{}, frames.ImageSize{}, "PNG", "RGB"))
-
-	log.Println("Queueing AudioRawFrame...")
-	task.QueueFrame(frames.NewAudioRawFrame([]byte{}, 16000, 1, 2))
-
-	// 5. Send a stop frame to terminate the pipeline
-	task.QueueFrame(frames.NewStopTaskFrame())
-
-	log.Println("Pipeline finished.")
-}
+### Filter Processor Example
+```shell
+go run examples/filter_example.go
 ```
 
-To run this example, you can save it as `main.go` and execute `go run .`.
+### Async Processor Example
+
+```shell
+go run examples/async_example.go
+# with interrupt
+go run examples/async_interrupt_example.go
+```
+
+### Metrics Collection Example
+
+```shell
+go run examples/metrics_example.go
+```
 
 ## Running Tests
 
 To run the complete test suite and see verbose output:
 ```bash
-go test -v ./...
+go test -v ./pkg/...
 ```
 
 # Reference

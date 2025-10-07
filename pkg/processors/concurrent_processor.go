@@ -6,10 +6,10 @@ import (
 	"github.com/weedge/pipeline-go/pkg/frames"
 )
 
-// ConcurrentProcessor wraps a FrameProcessor to make it run in its own goroutine.
+// ConcurrentProcessor wraps a IFrameProcessor to make it run in its own goroutine.
 type ConcurrentProcessor struct {
-	BaseProcessor
-	wrappedProcessor FrameProcessor
+	FrameProcessor
+	wrappedProcessor IFrameProcessor
 	inQueue          chan frames.Frame
 	direction        FrameDirection
 	once             sync.Once
@@ -17,7 +17,7 @@ type ConcurrentProcessor struct {
 }
 
 // NewConcurrentProcessor creates a new ConcurrentProcessor.
-func NewConcurrentProcessor(processor FrameProcessor) *ConcurrentProcessor {
+func NewConcurrentProcessor(processor IFrameProcessor) *ConcurrentProcessor {
 	return &ConcurrentProcessor{
 		wrappedProcessor: processor,
 		inQueue:          make(chan frames.Frame, 128),
@@ -26,7 +26,7 @@ func NewConcurrentProcessor(processor FrameProcessor) *ConcurrentProcessor {
 
 // startWorker starts the internal goroutine that processes frames from the queue.
 func (p *ConcurrentProcessor) startWorker() {
-	p.wrappedProcessor.Link(&p.BaseProcessor)
+	p.wrappedProcessor.Link(&p.FrameProcessor)
 	go func() {
 		for frame := range p.inQueue {
 			p.wrappedProcessor.ProcessFrame(frame, p.direction)

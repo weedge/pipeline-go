@@ -9,14 +9,14 @@ import (
 
 // MergePipeline concurrently merges the output of multiple pipelines into a single stream.
 type MergePipeline struct {
-	processors.BaseProcessor
-	pipelines []processors.FrameProcessor
+	processors.FrameProcessor
+	pipelines []processors.IFrameProcessor
 	outQueue  chan frames.Frame
 	wg        sync.WaitGroup
 }
 
 // NewMergePipeline creates a new MergePipeline.
-func NewMergePipeline(pipelines ...processors.FrameProcessor) *MergePipeline {
+func NewMergePipeline(pipelines ...processors.IFrameProcessor) *MergePipeline {
 	if len(pipelines) == 0 {
 		panic("MergePipeline needs at least one pipeline")
 	}
@@ -46,7 +46,7 @@ func NewMergePipeline(pipelines ...processors.FrameProcessor) *MergePipeline {
 
 // merger is a helper processor to link input pipelines to the merge queue.
 type merger struct {
-	processors.BaseProcessor
+	processors.FrameProcessor
 	mp *MergePipeline
 }
 
@@ -63,7 +63,7 @@ func (mp *MergePipeline) ProcessFrame(frame frames.Frame, direction processors.F
 	var wg sync.WaitGroup
 	for _, p := range mp.pipelines {
 		wg.Add(1)
-		go func(pl processors.FrameProcessor) {
+		go func(pl processors.IFrameProcessor) {
 			defer wg.Done()
 			pl.ProcessFrame(frame, direction)
 		}(p)

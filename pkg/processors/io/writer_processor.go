@@ -10,7 +10,7 @@ import (
 
 // WriterProcessor writes frames to an io.Writer.
 type WriterProcessor struct {
-	processors.BaseProcessor
+	processors.FrameProcessor
 	writer io.Writer
 }
 

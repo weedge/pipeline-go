@@ -1,6 +1,6 @@
 package frames
 
-import "reflect"
+import "fmt"
 
 // ControlFrame is a frame for controlling the pipeline.
 type ControlFrame struct {
@@ -9,7 +9,7 @@ type ControlFrame struct {
 
 func NewControlFrame() *ControlFrame {
 	return &ControlFrame{
-		BaseFrame: NewBaseFrame(reflect.TypeOf(ControlFrame{}).Name()),
+		BaseFrame: NewBaseFrameWithName("ControlFrame"),
 	}
 }
 
@@ -24,12 +24,22 @@ type StartFrame struct {
 	AudioOutSampleRate    int
 }
 
+// new default start frame
 func NewStartFrame() *StartFrame {
 	return &StartFrame{
-		ControlFrame:       NewControlFrame(),
-		AudioInSampleRate:  16000,
-		AudioOutSampleRate: 24000,
+		ControlFrame: &ControlFrame{
+			BaseFrame: NewBaseFrameWithName("StartFrame"),
+		},
+		AllowInterruptions:    false,
+		EnableMetrics:         false,
+		EnableUsageMetrics:    false,
+		ReportOnlyInitialTTFB: false,
+		AudioInSampleRate:     16000,
+		AudioOutSampleRate:    16000,
 	}
+}
+func (f *StartFrame) String() string {
+	return fmt.Sprintf("%s(allowInterruptions: %t, enableMetrics: %t, enableUsageMetrics: %t, reportOnlyInitialTTFB: %t, audioInSampleRate: %d, audioOutSampleRate: %d)", f.Name(), f.AllowInterruptions, f.EnableMetrics, f.EnableUsageMetrics, f.ReportOnlyInitialTTFB, f.AudioInSampleRate, f.AudioOutSampleRate)
 }
 
 // EndFrame indicates that a pipeline has ended.
@@ -39,7 +49,9 @@ type EndFrame struct {
 
 func NewEndFrame() *EndFrame {
 	return &EndFrame{
-		ControlFrame: NewControlFrame(),
+		ControlFrame: &ControlFrame{
+			BaseFrame: NewBaseFrameWithName("EndFrame"),
+		},
 	}
 }
 
@@ -50,7 +62,9 @@ type SyncFrame struct {
 
 func NewSyncFrame() *SyncFrame {
 	return &SyncFrame{
-		ControlFrame: NewControlFrame(),
+		ControlFrame: &ControlFrame{
+			BaseFrame: NewBaseFrameWithName("SyncFrame"),
+		},
 	}
 }
 
@@ -61,7 +75,9 @@ type SyncNotifyFrame struct {
 
 func NewSyncNotifyFrame() *SyncNotifyFrame {
 	return &SyncNotifyFrame{
-		ControlFrame: NewControlFrame(),
+		ControlFrame: &ControlFrame{
+			BaseFrame: NewBaseFrameWithName("SyncNotifyFrame"),
+		},
 	}
 }
 
@@ -72,6 +88,8 @@ type IdleFrame struct {
 
 func NewIdleFrame() *IdleFrame {
 	return &IdleFrame{
-		ControlFrame: NewControlFrame(),
+		ControlFrame: &ControlFrame{
+			BaseFrame: NewBaseFrameWithName("IdleFrame"),
+		},
 	}
 }

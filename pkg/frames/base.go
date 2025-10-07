@@ -11,34 +11,26 @@ import (
 //   - The `obj_id` and `obj_count` logic seems specific to the Python implementation's runtime object tracking. For the Go version, I can replicate this with a package-level counter or a simpler mechanism. A global atomic counter for IDs and a type-based counter for names would be a good Go-idiomatic equivalent.
 //   - I'll create a constructor function like `NewFrame(typeName string)` that initializes the `ID` and `Name`.
 var (
-	globalFrameID int64
-	typeCounts    = make(map[string]*int64)
+	typeCounts    = make(map[string]*uint64)
 	typeCountsMtx sync.Mutex
 )
 
-func nextFrameID() int64 {
-	return atomic.AddInt64(&globalFrameID, 1)
-}
-
-func countForType(typeName string) int64 {
+func countForType(typeName string) uint64 {
 	typeCountsMtx.Lock()
 	defer typeCountsMtx.Unlock()
 	count, ok := typeCounts[typeName]
 	if !ok {
-		count = new(int64)
+		count = new(uint64)
 		typeCounts[typeName] = count
 	}
-	return atomic.AddInt64(count, 1)
+	return atomic.AddUint64(count, 1)
 }
-
-var (
-	nextID uint64
-)
 
 // Frame is the interface that all frame types implement.
 type Frame interface {
 	ID() uint64
 	Name() string
+	String() string
 }
 
 // BaseFrame is a struct that provides a default implementation of the Frame interface.
@@ -47,11 +39,24 @@ type BaseFrame struct {
 	name string
 }
 
-// NewBaseFrame creates a new BaseFrame.
-func NewBaseFrame(name string) *BaseFrame {
+// NewBaseFrameWithName creates a new BaseFrame.
+func NewBaseFrameWithName(name string) *BaseFrame {
+	if name == "" {
+		name = "BaseFrame"
+	}
+	id := countForType(name)
 	return &BaseFrame{
-		id:   atomic.AddUint64(&nextID, 1),
-		name: fmt.Sprintf("%s#%d", name, nextID),
+		id:   id,
+		name: fmt.Sprintf("%s#%d", name, id),
+	}
+}
+
+func NewBaseFrame() *BaseFrame {
+	name := "BaseFrame"
+	id := countForType(name)
+	return &BaseFrame{
+		id:   id,
+		name: fmt.Sprintf("%s#%d", name, id),
 	}
 }
 
@@ -62,5 +67,10 @@ func (f *BaseFrame) ID() uint64 {
 
 // Name returns the frame's name.
 func (f *BaseFrame) Name() string {
+	return f.name
+}
+
+// String returns the frame's name.
+func (f *BaseFrame) String() string {
 	return f.name
 }

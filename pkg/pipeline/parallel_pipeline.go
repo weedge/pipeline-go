@@ -9,8 +9,8 @@ import (
 
 // ParallelPipeline runs multiple pipelines in parallel.
 type ParallelPipeline struct {
-	processors.BaseProcessor
-	pipelines []processors.FrameProcessor
+	processors.FrameProcessor
+	pipelines []processors.IFrameProcessor
 	upQueue   chan frames.Frame
 	downQueue chan frames.Frame
 	wg        sync.WaitGroup
@@ -19,7 +19,7 @@ type ParallelPipeline struct {
 
 // NewParallelPipeline creates a new ParallelPipeline.
 // Each argument is a list of processors for a single parallel pipeline.
-func NewParallelPipeline(pipelines ...[]processors.FrameProcessor) *ParallelPipeline {
+func NewParallelPipeline(pipelines ...[]processors.IFrameProcessor) *ParallelPipeline {
 	if len(pipelines) == 0 {
 		panic("ParallelPipeline needs at least one pipeline")
 	}
@@ -67,7 +67,7 @@ func (pp *ParallelPipeline) ProcessFrame(frame frames.Frame, direction processor
 	var wg sync.WaitGroup
 	for _, p := range pp.pipelines {
 		wg.Add(1)
-		go func(pl processors.FrameProcessor) {
+		go func(pl processors.IFrameProcessor) {
 			defer wg.Done()
 			pl.ProcessFrame(frame, direction)
 		}(p)

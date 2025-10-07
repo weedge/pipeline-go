@@ -10,7 +10,7 @@ import (
 
 // IdleProcessor detects periods of inactivity and emits an IdleFrame.
 type IdleProcessor struct {
-	BaseProcessor
+	FrameProcessor
 	timeout       time.Duration
 	resetTypes    map[reflect.Type]bool
 	timer         *time.Timer
@@ -71,4 +71,9 @@ func (p *IdleProcessor) ProcessFrame(frame frames.Frame, direction FrameDirectio
 	if _, ok := frame.(frames.EndFrame); ok {
 		p.timer.Stop()
 	}
+}
+
+// getActualProcessor returns the actual processor instance.
+func (p *IdleProcessor) getActualProcessor() IFrameProcessor {
+	return p
 }

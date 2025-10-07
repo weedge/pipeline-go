@@ -12,7 +12,12 @@ type DataFrame struct {
 
 func NewDataFrame() *DataFrame {
 	return &DataFrame{
-		BaseFrame: NewBaseFrame(reflect.TypeOf(DataFrame{}).Name()),
+		BaseFrame: NewBaseFrameWithName(reflect.TypeOf(DataFrame{}).Name()),
+	}
+}
+func NewDataFrameWithName(name string) *DataFrame {
+	return &DataFrame{
+		BaseFrame: NewBaseFrameWithName(name),
 	}
 }
 
@@ -25,7 +30,7 @@ type TextFrame struct {
 // NewTextFrame creates a new TextFrame.
 func NewTextFrame(text string) *TextFrame {
 	return &TextFrame{
-		DataFrame: NewDataFrame(),
+		DataFrame: NewDataFrameWithName("TextFrame"),
 		Text:      text,
 	}
 }
@@ -52,7 +57,7 @@ func NewAudioRawFrame(audio []byte, sampleRate, numChannels, sampleWidth int) *A
 		numFrames = len(audio) / (numChannels * sampleWidth)
 	}
 	return &AudioRawFrame{
-		DataFrame:   NewDataFrame(),
+		DataFrame: NewDataFrameWithName("AudioRawFrame"),
 		Audio:       audio,
 		SampleRate:  sampleRate,
 		NumChannels: numChannels,
@@ -87,7 +92,7 @@ type ImageRawFrame struct {
 // NewImageRawFrame creates a new ImageRawFrame.
 func NewImageRawFrame(image []byte, size ImageSize, format, mode string) *ImageRawFrame {
 	return &ImageRawFrame{
-		DataFrame: NewDataFrame(),
+		DataFrame: NewDataFrameWithName("ImageRawFrame"),
 		Image:     image,
 		Size:      size,
 		Format:    format,

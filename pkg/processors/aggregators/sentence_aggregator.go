@@ -12,7 +12,7 @@ var endOfSentencePattern = regexp.MustCompile(`[\.。\?？\!！:：]`)
 
 // SentenceAggregator aggregates text frames into sentences.
 type SentenceAggregator struct {
-	processors.BaseProcessor
+	processors.FrameProcessor
 	aggregation string
 }
 
