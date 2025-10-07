@@ -91,10 +91,10 @@ func NewStopInterruptionFrame() *StopInterruptionFrame {
 // MetricsFrame contains metrics about the pipeline.
 type MetricsFrame struct {
 	*SystemFrame
-	TTFB       []map[string]interface{}
-	Processing []map[string]interface{}
-	Tokens     []map[string]interface{}
-	Characters []map[string]interface{}
+	TTFB       []map[string]any
+	Processing []map[string]any
+	Tokens     []map[string]any
+	Characters []map[string]any
 }
 
 func NewMetricsFrame() *MetricsFrame {

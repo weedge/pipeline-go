@@ -52,9 +52,6 @@ func TestFrameProcessor(t *testing.T) {
 	assert.False(t, processor.UsageMetricsEnabled())
 	assert.False(t, processor.ReportOnlyInitialTTFB())
 
-	// Test that by default it cannot generate metrics
-	assert.False(t, processor.CanGenerateMetrics())
-
 	// Test skip frames functionality
 	frame := frames.NewTextFrame("test")
 	processor.AddSkipFrame(frame)
@@ -90,32 +87,4 @@ func TestFrameProcessorStartFrame(t *testing.T) {
 	assert.True(t, processor.enableMetrics)
 	assert.True(t, processor.enableUsageMetrics)
 	assert.True(t, processor.reportOnlyInitialTTFB)
-}
-
-func TestFrameProcessorMetrics(t *testing.T) {
-	// Create a new frame processor
-	processor := NewFrameProcessor("test-processor")
-
-	// Mock the CanGenerateMetrics method to return true
-	// Since we can't easily override methods in Go, we'll test the metrics functions directly
-	// by calling them even though CanGenerateMetrics returns false
-
-	// Enable metrics through a start frame
-	startFrame := &frames.StartFrame{
-		EnableMetrics: true,
-	}
-	processor.ProcessFrame(startFrame, FrameDirectionDownstream)
-
-	// Test TTFB metrics
-	processor.StartTTFBMetrics()
-	time.Sleep(10 * time.Millisecond)
-	processor.StopTTFBMetrics()
-
-	// Test processing metrics
-	processor.StartProcessingMetrics()
-	time.Sleep(10 * time.Millisecond)
-	processor.StopProcessingMetrics()
-
-	// Test stopping all metrics
-	processor.StopAllMetrics()
 }

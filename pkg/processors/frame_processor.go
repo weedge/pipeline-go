@@ -109,21 +109,16 @@ func (p *FrameProcessor) AddSkipFrame(frame frames.Frame) {
 	p.skipFrames = append(p.skipFrames, frame)
 }
 
-// CanGenerateMetrics returns whether the processor can generate metrics.
-func (p *FrameProcessor) CanGenerateMetrics() bool {
-	return false // Base implementation returns false, should be overridden by subclasses
-}
-
 // StartTTFBMetrics starts TTFB metrics collection.
 func (p *FrameProcessor) StartTTFBMetrics() {
-	if p.CanGenerateMetrics() && p.MetricsEnabled() {
+	if p.MetricsEnabled() {
 		p.metrics.StartTTFBMetrics(p.ReportOnlyInitialTTFB())
 	}
 }
 
 // StopTTFBMetrics stops TTFB metrics collection and pushes a MetricsFrame if applicable.
 func (p *FrameProcessor) StopTTFBMetrics() {
-	if p.CanGenerateMetrics() && p.MetricsEnabled() {
+	if p.MetricsEnabled() {
 		frame := p.metrics.StopTTFBMetrics()
 		if frame != nil {
 			p.PushFrame(frame, FrameDirectionDownstream)
@@ -133,14 +128,14 @@ func (p *FrameProcessor) StopTTFBMetrics() {
 
 // StartProcessingMetrics starts processing time metrics collection.
 func (p *FrameProcessor) StartProcessingMetrics() {
-	if p.CanGenerateMetrics() && p.MetricsEnabled() {
+	if p.MetricsEnabled() {
 		p.metrics.StartProcessingMetrics()
 	}
 }
 
 // StopProcessingMetrics stops processing time metrics collection and pushes a MetricsFrame if applicable.
 func (p *FrameProcessor) StopProcessingMetrics() {
-	if p.CanGenerateMetrics() && p.MetricsEnabled() {
+	if p.MetricsEnabled() {
 		frame := p.metrics.StopProcessingMetrics()
 		if frame != nil {
 			p.PushFrame(frame, FrameDirectionDownstream)
@@ -165,6 +160,7 @@ func (p *FrameProcessor) GetParentPipeline() IFrameProcessor {
 }
 
 // ProcessFrame implements the IFrameProcessor interface.
+// Handle StartFrame to init and StartInterruptionFrame to stop all metrics
 func (p *FrameProcessor) ProcessFrame(frame frames.Frame, direction FrameDirection) {
 	// Check if frame should be skipped
 	if slices.Contains(p.skipFrames, frame) {

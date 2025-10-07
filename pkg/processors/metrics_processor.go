@@ -1,7 +1,6 @@
 package processors
 
 import (
-	"log"
 	"time"
 
 	"github.com/weedge/pipeline-go/pkg/frames"
@@ -40,10 +39,9 @@ func (m *MetricsProcessor) StopTTFBMetrics() *frames.MetricsFrame {
 	}
 
 	value := time.Since(m.startTTFBTime).Seconds()
-	log.Printf("%s TTFB: %f", m.name, value)
-	ttfb := map[string]interface{}{"processor": m.name, "value": value}
+	ttfb := map[string]any{"processor": m.name, "value": value}
 	m.startTTFBTime = time.Time{} // Reset to zero time
-	return frames.NewMetricsFrameWithTTFB([]map[string]interface{}{ttfb})
+	return frames.NewMetricsFrameWithTTFB([]map[string]any{ttfb})
 }
 
 // StartProcessingMetrics starts processing time metrics collection.
@@ -58,8 +56,7 @@ func (m *MetricsProcessor) StopProcessingMetrics() *frames.MetricsFrame {
 	}
 
 	value := time.Since(m.startProcessingTime).Seconds()
-	log.Printf("%s processing time: %f", m.name, value)
-	processing := map[string]interface{}{"processor": m.name, "value": value}
+	processing := map[string]any{"processor": m.name, "value": value}
 	m.startProcessingTime = time.Time{} // Reset to zero time
-	return frames.NewMetricsFrameWithProcessing([]map[string]interface{}{processing})
+	return frames.NewMetricsFrameWithProcessing([]map[string]any{processing})
 }
