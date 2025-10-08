@@ -59,7 +59,7 @@ go run examples/filter_example.go
 ```shell
 go run examples/async_example.go
 # with interrupt
-go run examples/async_interrupt_example.go
+go run examples/async_interruption_example.go
 ```
 
 ### Metrics Collection Example

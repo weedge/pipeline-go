@@ -21,7 +21,7 @@ func main() {
 	// 3. Create a simple pipeline with the async processor
 	myPipeline := pipeline.NewPipeline(
 		[]processors.IFrameProcessor{
-			asyncProc,
+			asyncProc.WithPorcessFrameAllowPush(true),
 			logger,
 		},
 		nil, nil,

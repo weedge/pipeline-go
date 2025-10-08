@@ -71,7 +71,7 @@ func TestAsyncFrameProcessor(t *testing.T) {
 
 	// Create an async processor and link it to the mock processor
 	asyncProc := NewAsyncFrameProcessor("async_processor")
-	asyncProc.Link(mockProc)
+	asyncProc.WithPorcessFrameAllowPush(true).Link(mockProc)
 
 	// Send some frames
 	s_frame := frames.NewStartFrame()

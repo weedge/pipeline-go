@@ -186,6 +186,16 @@ func (p *FrameProcessor) PushError(errorFrame *frames.ErrorFrame) {
 	p.PushFrame(errorFrame, FrameDirectionUpstream)
 }
 
+// PushDownstreamFrame pushes a frame in the Downstream direction.
+func (p *FrameProcessor) PushDownstreamFrame(frame frames.Frame) {
+	p.PushFrame(frame, FrameDirectionDownstream)
+}
+
+// PushUpstreamFrame pushes a frame in the Upstream direction.
+func (p *FrameProcessor) PushUpstreamFrame(frame frames.Frame) {
+	p.PushFrame(frame, FrameDirectionUpstream)
+}
+
 // PushFrame pushes a frame in the specified direction.
 func (p *FrameProcessor) PushFrame(frame frames.Frame, direction FrameDirection) {
 	defer func() {

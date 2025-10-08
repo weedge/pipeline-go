@@ -14,7 +14,7 @@ func main() {
 
 	// 1. Create an async processor
 	asyncProc := processors.NewAsyncFrameProcessor("async_processor")
-	asyncProc.SetVerbose(true)
+	asyncProc.WithPorcessFrameAllowPush(true).SetVerbose(true)
 
 	// 2. Link it to a logger processor
 	logger := processors.NewFrameTraceLogger("async", 0)

@@ -13,12 +13,13 @@ import (
 // AsyncFrameProcessor is a processor that handles frames asynchronously using a queue.
 type AsyncFrameProcessor struct {
 	*FrameProcessor
-	ctx            context.Context
-	cancel         context.CancelFunc
-	pushQueueSize  int
-	pushQueue      chan pushItem
-	pushFrameTask  *sync.WaitGroup
-	interruptionMu sync.Mutex
+	ctx                   context.Context
+	cancel                context.CancelFunc
+	pushQueueSize         int
+	pushQueue             chan pushItem
+	pushFrameTask         *sync.WaitGroup
+	interruptionMu        sync.Mutex
+	porcessFrameAllowPush bool
 }
 
 // pushItem represents an item in the push queue.
@@ -36,14 +37,25 @@ func NewAsyncFrameProcessor(name string) *AsyncFrameProcessor {
 func NewAsyncFrameProcessorWithPushQueueSize(name string, pushQueueSize int) *AsyncFrameProcessor {
 	ctx, cancel := context.WithCancel(context.Background())
 	p := &AsyncFrameProcessor{
-		FrameProcessor: NewFrameProcessor(name),
-		ctx:            ctx,
-		cancel:         cancel,
-		pushQueueSize:  pushQueueSize,
-		pushQueue:      make(chan pushItem, pushQueueSize), // Buffer size similar to Python's asyncio.Queue
-		pushFrameTask:  &sync.WaitGroup{},
+		FrameProcessor:        NewFrameProcessor(name),
+		ctx:                   ctx,
+		cancel:                cancel,
+		pushQueueSize:         pushQueueSize,
+		pushQueue:             make(chan pushItem, pushQueueSize), // Buffer size similar to Python's asyncio.Queue
+		pushFrameTask:         &sync.WaitGroup{},
+		porcessFrameAllowPush: false,
 	}
 	p.createPushTask()
+	return p
+}
+
+// ProcessFrameAllowPush returns whether verbose mode is enabled.
+func (p *AsyncFrameProcessor) ProcessFrameAllowPush() bool {
+	return p.porcessFrameAllowPush
+}
+
+func (p *AsyncFrameProcessor) WithPorcessFrameAllowPush(porcessFrameAllowPush bool) *AsyncFrameProcessor {
+	p.porcessFrameAllowPush = porcessFrameAllowPush
 	return p
 }
 
@@ -57,10 +69,10 @@ func (p *AsyncFrameProcessor) ProcessFrame(frame frames.Frame, direction FrameDi
 	case *frames.StartInterruptionFrame, frames.StartInterruptionFrame:
 		p.HandleInterruptions(frame)
 	default:
-		// Queue the frame for asynchronous processing
-		p.QueueFrame(frame, direction)
+		if p.porcessFrameAllowPush {
+			p.QueueFrame(frame, direction)
+		}
 	}
-
 }
 
 // Cleanup implements the IFrameProcessor interface.
