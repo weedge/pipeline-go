@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/weedge/pipeline-go/pkg/frames"
@@ -43,7 +43,7 @@ func (p *CustomProcessor) ProcessFrame(frame frames.Frame, direction processors.
 }
 
 func main() {
-	log.Println("Starting metrics example...")
+	slog.Info("Starting metrics example...")
 
 	// 1. Create a custom processor that can generate metrics
 	customProc := NewCustomProcessor("custom-processor")
@@ -60,7 +60,7 @@ func main() {
 		},
 		nil, nil,
 	)
-	println(myPipeline.String())
+	slog.Info(myPipeline.String())
 
 	// 4. Create and run a pipeline task with metrics enabled to push start frame
 	task := pipeline.NewPipelineTask(myPipeline, pipeline.PipelineParams{
@@ -69,20 +69,20 @@ func main() {
 	go task.Run()
 
 	// 6. Send frames to the pipeline
-	log.Println("Queueing frames...")
+	slog.Info("Queueing frames...")
 	task.QueueFrame(frames.NewTextFrame("Hello, metrics world!"))
 	task.QueueFrame(frames.NewTextFrame("Processing with metrics..."))
 
 	// Give some time for async processing
 	time.Sleep(1000 * time.Millisecond)
 
-	log.Println("Send a stop frame to terminate the pipeline.")
+	slog.Info("Send a stop frame to terminate the pipeline.")
 	// 8. Send a stop frame to terminate the pipeline
 	task.QueueFrame(frames.NewEndFrame())
 
-	log.Println("Terminating the pipeline.")
+	slog.Info("Terminating the pipeline.")
 	// Give some time for termination
 	time.Sleep(100 * time.Millisecond)
 
-	log.Println("Metrics example finished.")
+	slog.Info("Metrics example finished.")
 }

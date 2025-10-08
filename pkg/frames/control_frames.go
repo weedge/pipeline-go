@@ -13,6 +13,12 @@ func NewControlFrame() *ControlFrame {
 	}
 }
 
+func NewControlFrameWithName(name string) *ControlFrame {
+	return &ControlFrame{
+		BaseFrame: NewBaseFrameWithName(name),
+	}
+}
+
 // StartFrame is the first frame that should be pushed down a pipeline.
 type StartFrame struct {
 	*ControlFrame

@@ -3,7 +3,7 @@ package pipeline
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"sync"
 
 	"github.com/weedge/pipeline-go/pkg/frames"
@@ -42,7 +42,7 @@ func (s *TaskSource) ProcessFrame(frame frames.Frame, direction processors.Frame
 
 func (s *TaskSource) handleUpstreamFrame(frame frames.Frame) {
 	if errFrame, ok := frame.(*frames.ErrorFrame); ok {
-		log.Printf("Error running app: %+v", errFrame.Error)
+		slog.Error(fmt.Sprintf("Error running app: %+v", errFrame.Error))
 		if errFrame.Fatal {
 			// Cancel all tasks downstream.
 			s.PushFrame(frames.CancelFrame{}, processors.FrameDirectionDownstream)
@@ -100,12 +100,12 @@ func (t *PipelineTask) HasFinished() bool {
 }
 
 func (t *PipelineTask) StopWhenDone() {
-	log.Printf("Task %s scheduled to stop when done", t.Name)
+	slog.Info(fmt.Sprintf("Task %s scheduled to stop when done", t.Name))
 	t.QueueFrame(frames.NewEndFrame())
 }
 
 func (t *PipelineTask) Cancel() {
-	log.Printf("Canceling pipeline task %s", t.Name)
+	slog.Info(fmt.Sprintf("Canceling pipeline task %s", t.Name))
 	t.source.PushFrame(frames.CancelFrame{}, processors.FrameDirectionDownstream)
 	t.cancel()
 }
@@ -116,7 +116,7 @@ func (t *PipelineTask) Run() {
 	go t.processUpQueue()
 	t.wg.Wait()
 	t.finished = true
-	log.Printf("%s Run Finished", t.Name)
+	slog.Info(fmt.Sprintf("%s Run Finished", t.Name))
 }
 
 func (t *PipelineTask) QueueFrame(frame frames.Frame) {
@@ -142,18 +142,16 @@ func (t *PipelineTask) processDownQueue() {
 	for {
 		select {
 		case <-t.ctx.Done():
-			//log.Println("processDownQueue Done")
 			return
 		case frame, ok := <-t.downQueue:
 			if !ok {
-				//log.Println("downQueue is close, processDownQueue Done")
 				return
 			}
 			t.source.ProcessFrame(frame, processors.FrameDirectionDownstream)
 			switch frame.(type) {
 			case *frames.StopTaskFrame, *frames.EndFrame, frames.StopTaskFrame, frames.EndFrame:
 				t.cancel()
-				//log.Printf("get %T, processDownQueue Done", frame)
+				//slog.Info(fmt.Sprintf("get %T, processDownQueue Done", frame)
 				return
 			}
 		}

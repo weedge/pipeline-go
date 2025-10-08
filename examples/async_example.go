@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/weedge/pipeline-go/pkg/frames"
@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	log.Println("Starting async pipeline example...")
+	slog.Info("Starting async pipeline example...")
 
 	// 1. Create an async processor
 	asyncProc := processors.NewAsyncFrameProcessor("async_processor")
@@ -28,27 +28,27 @@ func main() {
 		},
 		nil, nil,
 	)
-	log.Println(myPipeline)
+	slog.Info(myPipeline.String())
 
 	// 4. Create and run a pipeline task
 	task := pipeline.NewPipelineTask(myPipeline, pipeline.PipelineParams{})
 	go task.Run()
 
 	// 5. Send frames to the pipeline
-	log.Println("Queueing frames...")
+	slog.Info("Queueing frames...")
 	task.QueueFrame(frames.NewTextFrame("Hello, async world!"))
 	task.QueueFrame(frames.NewTextFrame("Processing asynchronously..."))
 
 	// Give some time for async processing
 	time.Sleep(100 * time.Millisecond)
 
-	log.Println("Send a stop frame to terminate the pipeline.")
+	slog.Info("Send a stop frame to terminate the pipeline.")
 	// 6. Send a stop frame to terminate the pipeline
 	task.QueueFrame(frames.NewEndFrame())
 
-	log.Println("Terminating the pipeline.")
+	slog.Info("Terminating the pipeline.")
 	// Give some time for termination
 	time.Sleep(100 * time.Millisecond)
 
-	log.Println("Async pipeline finished.")
+	slog.Info("Async pipeline finished.")
 }

@@ -1,7 +1,8 @@
 package processors
 
 import (
-	"log"
+	"fmt"
+	"log/slog"
 
 	"github.com/weedge/pipeline-go/pkg/frames"
 )
@@ -18,19 +19,19 @@ func NewPrintOutFrameProcessor() *PrintOutFrameProcessor {
 
 // ProcessFrame prints the frame and handles specific text commands.
 func (p *PrintOutFrameProcessor) ProcessFrame(frame frames.Frame, direction FrameDirection) {
-	log.Printf("PrintOut: %s", frame)
+	slog.Info(fmt.Sprintf("PrintOut: %s", frame))
 
 	if textFrame, ok := frame.(*frames.TextFrame); ok {
 		switch textFrame.Text {
 		case "end":
 			p.PushFrame(frames.NewEndFrame(), FrameDirectionUpstream)
-			log.Println("End ok")
+			slog.Info("End ok")
 		case "cancel":
 			p.PushFrame(frames.NewCancelFrame(), FrameDirectionUpstream)
-			log.Println("Cancel ok")
+			slog.Info("Cancel ok")
 		case "endTask":
 			p.PushFrame(frames.NewStopTaskFrame(), FrameDirectionUpstream)
-			log.Println("End Task ok")
+			slog.Info("End Task ok")
 		}
 	}
 	p.PushFrame(frame, direction)

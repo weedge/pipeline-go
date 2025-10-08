@@ -1,7 +1,8 @@
 package processors
 
 import (
-	"log"
+	"fmt"
+	"log/slog"
 
 	"github.com/weedge/pipeline-go/pkg/frames"
 )
@@ -21,11 +22,6 @@ func (p *LoggerProcessor) Name() string {
 }
 
 func (p *LoggerProcessor) ProcessFrame(frame frames.Frame, direction FrameDirection) {
-	log.Printf("[%s] received frame: %+v, direction: %d", p.name, frame, direction)
+	slog.Info(fmt.Sprintf("[%s] received frame: %+v, direction: %d", p.name, frame, direction))
 	p.PushFrame(frame, direction)
-}
-
-// getActualProcessor returns the actual processor instance.
-func (p *LoggerProcessor) getActualProcessor() IFrameProcessor {
-	return p
 }
