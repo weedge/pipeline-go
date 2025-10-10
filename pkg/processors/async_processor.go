@@ -148,7 +148,6 @@ func (p *AsyncFrameProcessor) pushFrameTaskHandler() {
 				logger.Warn(fmt.Sprintf("%s push queue closed", p.name))
 				return
 			}
-			logger.Info(fmt.Sprintf("%s get %+v", p.name, item.frame.String()))
 
 			// Push the frame
 			p.PushFrame(item.frame, item.direction)

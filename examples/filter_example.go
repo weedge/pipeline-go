@@ -23,7 +23,7 @@ func main() {
 	})
 
 	// This logger will print any frame that it receives
-	trace_logger := processors.NewFrameTraceLogger("output", 0)
+	trace_logger := processors.NewDefaultFrameLoggerProcessorWithName("output")
 
 	// 2. Create a new pipeline
 	myPipeline := pipeline.NewPipeline(

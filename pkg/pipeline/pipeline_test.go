@@ -16,7 +16,7 @@ import (
 
 func TestSimple(t *testing.T) {
 	pipeline := NewPipeline([]processors.IFrameProcessor{
-		processors.NewFrameTraceLogger("simple", 0),
+		processors.NewDefaultFrameLoggerProcessor(),
 	}, nil, nil)
 	fmt.Println(pipeline)
 
@@ -32,12 +32,12 @@ func TestSimple(t *testing.T) {
 
 func TestParallelPipeline(t *testing.T) {
 	pipeline := NewPipeline([]processors.IFrameProcessor{
-		processors.NewFrameTraceLogger("0", 0),
+		processors.NewDefaultFrameLoggerProcessorWithName("P1"),
 		NewParallelPipeline(
-			[]processors.IFrameProcessor{processors.NewFrameTraceLogger("1.0", 1000)},
-			[]processors.IFrameProcessor{processors.NewFrameTraceLogger("1.1", 0)},
+			[]processors.IFrameProcessor{processors.NewDefaultFrameLoggerProcessorWithName("P1.1")},
+			[]processors.IFrameProcessor{processors.NewDefaultFrameLoggerProcessorWithName("P1.2")},
 		),
-		processors.NewFrameTraceLogger("3", 0),
+		processors.NewDefaultFrameLoggerProcessorWithName("P3"),
 	}, nil, nil)
 	fmt.Println(pipeline)
 
@@ -51,12 +51,12 @@ func TestParallelPipeline(t *testing.T) {
 
 func TestSyncParallelPipeline(t *testing.T) {
 	pipeline := NewPipeline([]processors.IFrameProcessor{
-		processors.NewFrameTraceLogger("0", 0),
+		processors.NewDefaultFrameLoggerProcessor(),
 		NewSyncParallelPipeline(
-			NewPipeline([]processors.IFrameProcessor{processors.NewFrameTraceLogger("1.0", 1000)}, nil, nil),
-			NewPipeline([]processors.IFrameProcessor{processors.NewFrameTraceLogger("1.1", 0)}, nil, nil),
+			NewPipeline([]processors.IFrameProcessor{processors.NewDefaultFrameLoggerProcessor()}, nil, nil),
+			NewPipeline([]processors.IFrameProcessor{processors.NewDefaultFrameLoggerProcessor()}, nil, nil),
 		),
-		processors.NewFrameTraceLogger("3", 0),
+		processors.NewDefaultFrameLoggerProcessor(),
 	}, nil, nil)
 	fmt.Println(pipeline)
 
@@ -122,7 +122,7 @@ func TestTypeFilter(t *testing.T) {
 
 	pipeline := NewPipeline([]processors.IFrameProcessor{
 		// This filter should only allow TextFrames and AudioRawFrames to pass.
-		filters.NewTypeFilter([]interface{}{&frames.TextFrame{}, &frames.AudioRawFrame{}}),
+		filters.NewTypeFilter([]any{&frames.TextFrame{}, &frames.AudioRawFrame{}}),
 		collector,
 	}, nil, nil)
 

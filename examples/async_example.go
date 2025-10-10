@@ -18,7 +18,7 @@ func main() {
 	asyncProc.WithPorcessFrameAllowPush(true).SetVerbose(true)
 
 	// 2. Link it to a logger processor
-	trace_logger := processors.NewFrameTraceLogger("async", 0)
+	trace_logger := processors.NewDefaultFrameLoggerProcessorWithName("async")
 	trace_logger.SetVerbose(true)
 
 	// 3. Create a simple pipeline with the async processor
