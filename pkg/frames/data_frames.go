@@ -57,7 +57,7 @@ func NewAudioRawFrame(audio []byte, sampleRate, numChannels, sampleWidth int) *A
 		numFrames = len(audio) / (numChannels * sampleWidth)
 	}
 	return &AudioRawFrame{
-		DataFrame: NewDataFrameWithName("AudioRawFrame"),
+		DataFrame:   NewDataFrameWithName("AudioRawFrame"),
 		Audio:       audio,
 		SampleRate:  sampleRate,
 		NumChannels: numChannels,
@@ -106,4 +106,30 @@ func (f *ImageRawFrame) String() string {
 		"%s(size: [%d, %d], format: %s, mode: %s)",
 		f.Name(), f.Size.Width, f.Size.Height, f.Format, f.Mode,
 	)
+}
+
+// ExtractDataFrame 从帧中提取DataFrame（通过反射检查是否嵌入了DataFrame）
+func ExtractDataFrame(frame Frame) *DataFrame {
+	val := reflect.ValueOf(frame)
+
+	if val.Kind() == reflect.Pointer {
+		val = val.Elem()
+	}
+
+	if val.Kind() != reflect.Struct {
+		return nil
+	}
+
+	for i := 0; i < val.NumField(); i++ {
+		field := val.Field(i)
+		fieldType := val.Type().Field(i)
+
+		if fieldType.Type == reflect.TypeOf(&DataFrame{}) {
+			if !field.IsNil() {
+				return field.Interface().(*DataFrame)
+			}
+		}
+	}
+
+	return nil
 }

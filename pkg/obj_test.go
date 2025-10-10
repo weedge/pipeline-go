@@ -1,4 +1,4 @@
-package processors
+package pkg
 
 import (
 	"testing"
@@ -60,20 +60,20 @@ func TestObjCount(t *testing.T) {
 	}
 }
 
-func TestGetTypeName(t *testing.T) {
+func TestGetObjTypeName(t *testing.T) {
 	type TestStruct struct{}
 
 	var nilPtr *TestStruct
 	obj := &TestStruct{}
 
 	// Test with a regular object
-	name := getTypeName(obj)
+	name := GetObjTypeName(obj)
 	if name != "TestStruct" {
 		t.Errorf("Expected type name to be 'TestStruct', got '%s'", name)
 	}
 
 	// Test with a nil pointer (this would panic without our fix)
-	name = getTypeName(nilPtr)
+	name = GetObjTypeName(nilPtr)
 	if name != "TestStruct" {
 		t.Errorf("Expected type name to be 'TestStruct', got '%s'", name)
 	}

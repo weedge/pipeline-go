@@ -106,7 +106,7 @@ func NewPipelineWithVerbose(procs []processors.IFrameProcessor, up, down func(fr
 	p.sink = NewPipelineSink(downPush)
 	p.processors = append([]processors.IFrameProcessor{p.source}, procs...)
 	p.processors = append(p.processors, p.sink)
-	p.linkProcessorsWithVerbose(verbose)
+	p.linkProcessorsSetVerbose(verbose)
 	return p
 }
 
@@ -137,7 +137,7 @@ func (p *Pipeline) linkProcessors() {
 	}
 }
 
-func (p *Pipeline) linkProcessorsWithVerbose(verbose bool) {
+func (p *Pipeline) linkProcessorsSetVerbose(verbose bool) {
 	if len(p.processors) == 0 {
 		return
 	}

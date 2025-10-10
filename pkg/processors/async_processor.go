@@ -2,22 +2,24 @@ package processors
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/weedge/pipeline-go/pkg/frames"
+	"github.com/weedge/pipeline-go/pkg/logger"
 )
 
 // AsyncFrameProcessor is a processor that handles frames asynchronously using a queue.
 type AsyncFrameProcessor struct {
 	*FrameProcessor
-	ctx            context.Context
-	cancel         context.CancelFunc
-	pushQueueSize  int
-	pushQueue      chan pushItem
-	pushFrameTask  *sync.WaitGroup
-	interruptionMu sync.Mutex
+	ctx                   context.Context
+	cancel                context.CancelFunc
+	pushQueueSize         int
+	pushQueue             chan pushItem
+	pushFrameTask         *sync.WaitGroup
+	interruptionMu        sync.Mutex
+	porcessFrameAllowPush bool
 }
 
 // pushItem represents an item in the push queue.
@@ -35,14 +37,25 @@ func NewAsyncFrameProcessor(name string) *AsyncFrameProcessor {
 func NewAsyncFrameProcessorWithPushQueueSize(name string, pushQueueSize int) *AsyncFrameProcessor {
 	ctx, cancel := context.WithCancel(context.Background())
 	p := &AsyncFrameProcessor{
-		FrameProcessor: NewFrameProcessor(name),
-		ctx:            ctx,
-		cancel:         cancel,
-		pushQueueSize:  pushQueueSize,
-		pushQueue:      make(chan pushItem, pushQueueSize), // Buffer size similar to Python's asyncio.Queue
-		pushFrameTask:  &sync.WaitGroup{},
+		FrameProcessor:        NewFrameProcessor(name),
+		ctx:                   ctx,
+		cancel:                cancel,
+		pushQueueSize:         pushQueueSize,
+		pushQueue:             make(chan pushItem, pushQueueSize), // Buffer size similar to Python's asyncio.Queue
+		pushFrameTask:         &sync.WaitGroup{},
+		porcessFrameAllowPush: false,
 	}
 	p.createPushTask()
+	return p
+}
+
+// ProcessFrameAllowPush returns whether verbose mode is enabled.
+func (p *AsyncFrameProcessor) ProcessFrameAllowPush() bool {
+	return p.porcessFrameAllowPush
+}
+
+func (p *AsyncFrameProcessor) WithPorcessFrameAllowPush(porcessFrameAllowPush bool) *AsyncFrameProcessor {
+	p.porcessFrameAllowPush = porcessFrameAllowPush
 	return p
 }
 
@@ -54,12 +67,12 @@ func (p *AsyncFrameProcessor) ProcessFrame(frame frames.Frame, direction FrameDi
 	// Handle interruption frames
 	switch frame.(type) {
 	case *frames.StartInterruptionFrame, frames.StartInterruptionFrame:
-		p.handleInterruptions(frame)
+		p.HandleInterruptions(frame)
 	default:
-		// Queue the frame for asynchronous processing
-		p.queueFrame(frame, direction)
+		if p.porcessFrameAllowPush {
+			p.QueueFrame(frame, direction)
+		}
 	}
-
 }
 
 // Cleanup implements the IFrameProcessor interface.
@@ -74,8 +87,8 @@ func (p *AsyncFrameProcessor) Cleanup() {
 	p.pushFrameTask.Wait()
 }
 
-// handleInterruptions handles interruption frames.
-func (p *AsyncFrameProcessor) handleInterruptions(frame frames.Frame) {
+// HandleInterruptions handles interruption frames.
+func (p *AsyncFrameProcessor) HandleInterruptions(frame frames.Frame) {
 	// out-of-band interruption handling
 	//if !p.allowInterruptions {
 	//	log.Printf("Warning: interruption frames are not allowed for processor %s", p.name)
@@ -101,7 +114,7 @@ func (p *AsyncFrameProcessor) handleInterruptions(frame frames.Frame) {
 	p.pushQueue = make(chan pushItem, 128)
 	p.pushFrameTask = &sync.WaitGroup{}
 	p.createPushTask()
-	log.Printf("AsyncFrameProcessor createPushTask is OK!")
+	logger.Info("AsyncFrameProcessor createPushTask is OK!")
 }
 
 // createPushTask creates a new push frame task.
@@ -111,11 +124,11 @@ func (p *AsyncFrameProcessor) createPushTask() {
 }
 
 // queueFrame queues a frame for processing.
-func (p *AsyncFrameProcessor) queueFrame(frame frames.Frame, direction FrameDirection) {
+func (p *AsyncFrameProcessor) QueueFrame(frame frames.Frame, direction FrameDirection) {
 	select {
 	case p.pushQueue <- pushItem{frame: frame, direction: direction}:
 	default:
-		log.Printf("Warning: push queue is full for processor %s", p.name)
+		logger.Warn(fmt.Sprintf("Warning: push queue is full for processor %s", p.name))
 	}
 }
 
@@ -127,15 +140,15 @@ func (p *AsyncFrameProcessor) pushFrameTaskHandler() {
 	for running {
 		select {
 		case <-p.ctx.Done():
-			log.Printf("%s pushFrameTaskHandler cancelled", p.name)
+			logger.Info(fmt.Sprintf("%s pushFrameTaskHandler cancelled", p.name))
 			return
 		case item, ok := <-p.pushQueue:
 			if !ok {
 				// Channel closed
-				log.Printf("%s push queue closed", p.name)
+				logger.Warn(fmt.Sprintf("%s push queue closed", p.name))
 				return
 			}
-			log.Printf("%s get %+v", p.name, item.frame.String())
+			logger.Info(fmt.Sprintf("%s get %+v", p.name, item.frame.String()))
 
 			// Push the frame
 			p.PushFrame(item.frame, item.direction)
