@@ -23,13 +23,13 @@ func main() {
 	})
 
 	// This logger will print any frame that it receives
-	logger := processors.NewFrameTraceLogger("output", 0)
+	trace_logger := processors.NewFrameTraceLogger("output", 0)
 
 	// 2. Create a new pipeline
 	myPipeline := pipeline.NewPipeline(
 		[]processors.IFrameProcessor{
 			imageFilter,
-			logger,
+			trace_logger,
 		},
 		nil, nil,
 	)

@@ -27,6 +27,7 @@ Pipeline-Go is a Go library for building flexible, concurrent data processing pi
 /
 ├── examples/        # processor examples
 ├── pkg/
+│   ├── logger/      # defined logger to config
 │   ├── frames/      # Defines all data and control frame types
 │   ├── notifiers/   # A simple channel-based notification system
 │   ├── pipeline/    # Core logic for Pipeline, PipelineTask, and parallel variants

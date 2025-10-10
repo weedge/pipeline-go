@@ -50,13 +50,13 @@ func main() {
 	//customProc.SetVerbose(true)
 
 	// 2. Link it to a logger processor
-	logger := processors.NewFrameTraceLogger("metrics", 0) // Add small delay to see the processing
+	trace_logger := processors.NewFrameTraceLogger("metrics", 0) // Add small delay to see the processing
 
 	// 3. Create a simple pipeline with the custom processor
 	myPipeline := pipeline.NewPipeline(
 		[]processors.IFrameProcessor{
 			customProc,
-			logger,
+			trace_logger,
 		},
 		nil, nil,
 	)

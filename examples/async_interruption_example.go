@@ -16,13 +16,13 @@ func main() {
 	asyncProc := processors.NewAsyncFrameProcessor("interruption-example")
 
 	// 2. Link it to a logger processor
-	logger := processors.NewFrameTraceLogger("async", 10) // Add small delay to see the processing
+	trace_logger := processors.NewFrameTraceLogger("async", 10) // Add small delay to see the processing
 
 	// 3. Create a simple pipeline with the async processor
 	myPipeline := pipeline.NewPipeline(
 		[]processors.IFrameProcessor{
 			asyncProc.WithPorcessFrameAllowPush(true),
-			logger,
+			trace_logger,
 		},
 		nil, nil,
 	)
