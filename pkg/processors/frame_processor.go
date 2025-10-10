@@ -2,6 +2,7 @@ package processors
 
 import (
 	"fmt"
+	"runtime"
 	"slices"
 
 	"github.com/weedge/pipeline-go/pkg/frames"
@@ -200,18 +201,24 @@ func (p *FrameProcessor) PushUpstreamFrame(frame frames.Frame) {
 func (p *FrameProcessor) PushFrame(frame frames.Frame, direction FrameDirection) {
 	defer func() {
 		if r := recover(); r != nil {
-			logger.Info(fmt.Sprintf("Uncaught panic in %s: %v", p.name, r))
+			// 获取调用栈信息
+			buf := make([]byte, 10240)
+			n := runtime.Stack(buf, false)
+			stackTrace := string(buf[:n])
+			println(stackTrace) // print in stderr for panic stack
+
+			logger.Info(fmt.Sprintf("Uncaught panic in %s(%T): %v\nStack trace:\n%s", p.name, p, r, stackTrace))
 		}
 	}()
 
 	if direction == FrameDirectionDownstream && p.next != nil {
 		if p.verbose {
-			logger.Info(fmt.Sprintf("Downstream %d Pushing %+v  %s(%T) -> %s (Calling ProcessFrame on next: %T)", direction, frame, p.name, p, p.next.Name(), p.next))
+			logger.Info(fmt.Sprintf("Downstream %d Pushing %s  %s(%T) -> %s (Calling ProcessFrame on next: %T)", direction, frame.String(), p.name, p, p.next.Name(), p.next))
 		}
 		p.next.ProcessFrame(frame, direction)
 	} else if direction == FrameDirectionUpstream && p.prev != nil {
 		if p.verbose {
-			logger.Info(fmt.Sprintf("Upstream %d Pushing %+v  %s(%T) -> %s (Calling ProcessFrame on prev: %T)", direction, frame, p.name, p, p.prev.Name(), p.prev))
+			logger.Info(fmt.Sprintf("Upstream %d Pushing %s  %s(%T) -> %s (Calling ProcessFrame on prev: %T)", direction, frame.String(), p.name, p, p.prev.Name(), p.prev))
 		}
 
 		// Check if prev is a mockProcessor with a custom prevProcessor field

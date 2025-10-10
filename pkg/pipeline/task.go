@@ -45,7 +45,7 @@ func (s *TaskSource) handleUpstreamFrame(frame frames.Frame) {
 		logger.Error(fmt.Sprintf("Error running app: %+v", errFrame.Error))
 		if errFrame.Fatal {
 			// Cancel all tasks downstream.
-			s.PushFrame(frames.CancelFrame{}, processors.FrameDirectionDownstream)
+			s.PushFrame(frames.NewCancelFrame(), processors.FrameDirectionDownstream)
 			// Tell the task we should stop.
 			s.upQueue <- frames.StopTaskFrame{}
 		}
@@ -106,8 +106,9 @@ func (t *PipelineTask) StopWhenDone() {
 
 func (t *PipelineTask) Cancel() {
 	logger.Info(fmt.Sprintf("Canceling pipeline task %s", t.Name))
-	t.source.PushFrame(frames.CancelFrame{}, processors.FrameDirectionDownstream)
+	t.source.PushFrame(frames.NewCancelFrame(), processors.FrameDirectionDownstream)
 	t.cancel()
+	logger.Infof("%s Canceled", t.Name)
 }
 
 func (t *PipelineTask) Run() {
