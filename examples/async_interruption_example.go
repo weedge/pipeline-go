@@ -1,16 +1,16 @@
 package main
 
 import (
-	"log/slog"
 	"time"
 
 	"github.com/weedge/pipeline-go/pkg/frames"
+	"github.com/weedge/pipeline-go/pkg/logger"
 	"github.com/weedge/pipeline-go/pkg/pipeline"
 	"github.com/weedge/pipeline-go/pkg/processors"
 )
 
 func main() {
-	slog.Info("Starting async interruption example...")
+	logger.Info("Starting async interruption example...")
 
 	// 1. Create an async processor
 	asyncProc := processors.NewAsyncFrameProcessor("interruption-example")
@@ -26,14 +26,14 @@ func main() {
 		},
 		nil, nil,
 	)
-	slog.Info(myPipeline.String())
+	logger.Info(myPipeline.String())
 
 	// 4. Create and run a pipeline task
 	task := pipeline.NewPipelineTask(myPipeline, pipeline.PipelineParams{})
 	go task.Run()
 
 	// 5. Send frames to the pipeline
-	slog.Info("Queueing frames...")
+	logger.Info("Queueing frames...")
 	task.QueueFrame(frames.NewTextFrame("Hello, async world!"))
 	task.QueueFrame(frames.NewTextFrame("Processing asynchronously..."))
 
@@ -41,26 +41,26 @@ func main() {
 	time.Sleep(100 * time.Millisecond)
 
 	// 6. Send an interruption frame
-	slog.Info("Sending interruption frame...")
+	logger.Info("Sending interruption frame...")
 	task.QueueFrame(frames.NewStartInterruptionFrame())
 
 	// Wait a bit to let the interruption process
 	time.Sleep(50 * time.Millisecond)
 
 	// 7. Send more frames after interruption
-	slog.Info("Queueing frames after interruption...")
+	logger.Info("Queueing frames after interruption...")
 	task.QueueFrame(frames.NewTextFrame("After interruption..."))
 
 	// Give some time for async processing
 	time.Sleep(100 * time.Millisecond)
 
-	slog.Info("Send a stop frame to terminate the pipeline.")
+	logger.Info("Send a stop frame to terminate the pipeline.")
 	// 8. Send a stop frame to terminate the pipeline
 	task.QueueFrame(frames.NewEndFrame())
 
-	slog.Info("Terminating the pipeline.")
+	logger.Info("Terminating the pipeline.")
 	// Give some time for termination
 	time.Sleep(100 * time.Millisecond)
 
-	slog.Info("Async interruption example finished.")
+	logger.Info("Async interruption example finished.")
 }

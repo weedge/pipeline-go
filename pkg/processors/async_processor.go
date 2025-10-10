@@ -3,11 +3,11 @@ package processors
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"sync"
 	"time"
 
 	"github.com/weedge/pipeline-go/pkg/frames"
+	"github.com/weedge/pipeline-go/pkg/logger"
 )
 
 // AsyncFrameProcessor is a processor that handles frames asynchronously using a queue.
@@ -114,7 +114,7 @@ func (p *AsyncFrameProcessor) HandleInterruptions(frame frames.Frame) {
 	p.pushQueue = make(chan pushItem, 128)
 	p.pushFrameTask = &sync.WaitGroup{}
 	p.createPushTask()
-	slog.Info("AsyncFrameProcessor createPushTask is OK!")
+	logger.Info("AsyncFrameProcessor createPushTask is OK!")
 }
 
 // createPushTask creates a new push frame task.
@@ -128,7 +128,7 @@ func (p *AsyncFrameProcessor) QueueFrame(frame frames.Frame, direction FrameDire
 	select {
 	case p.pushQueue <- pushItem{frame: frame, direction: direction}:
 	default:
-		slog.Warn(fmt.Sprintf("Warning: push queue is full for processor %s", p.name))
+		logger.Warn(fmt.Sprintf("Warning: push queue is full for processor %s", p.name))
 	}
 }
 
@@ -140,15 +140,15 @@ func (p *AsyncFrameProcessor) pushFrameTaskHandler() {
 	for running {
 		select {
 		case <-p.ctx.Done():
-			slog.Info(fmt.Sprintf("%s pushFrameTaskHandler cancelled", p.name))
+			logger.Info(fmt.Sprintf("%s pushFrameTaskHandler cancelled", p.name))
 			return
 		case item, ok := <-p.pushQueue:
 			if !ok {
 				// Channel closed
-				slog.Warn(fmt.Sprintf("%s push queue closed", p.name))
+				logger.Warn(fmt.Sprintf("%s push queue closed", p.name))
 				return
 			}
-			slog.Info(fmt.Sprintf("%s get %+v", p.name, item.frame.String()))
+			logger.Info(fmt.Sprintf("%s get %+v", p.name, item.frame.String()))
 
 			// Push the frame
 			p.PushFrame(item.frame, item.direction)

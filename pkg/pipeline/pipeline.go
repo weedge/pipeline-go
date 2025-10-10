@@ -89,7 +89,7 @@ func NewPipeline(procs []processors.IFrameProcessor, up, down func(frames.Frame,
 	return p
 }
 
-func NewPipelineSetVerbose(procs []processors.IFrameProcessor, up, down func(frames.Frame, processors.FrameDirection), verbose bool) *Pipeline {
+func NewPipelineWithVerbose(procs []processors.IFrameProcessor, up, down func(frames.Frame, processors.FrameDirection), verbose bool) *Pipeline {
 	p := &Pipeline{}
 
 	upPush := p.PushFrame

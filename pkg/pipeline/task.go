@@ -3,10 +3,10 @@ package pipeline
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"sync"
 
 	"github.com/weedge/pipeline-go/pkg/frames"
+	"github.com/weedge/pipeline-go/pkg/logger"
 	"github.com/weedge/pipeline-go/pkg/processors"
 )
 
@@ -42,7 +42,7 @@ func (s *TaskSource) ProcessFrame(frame frames.Frame, direction processors.Frame
 
 func (s *TaskSource) handleUpstreamFrame(frame frames.Frame) {
 	if errFrame, ok := frame.(*frames.ErrorFrame); ok {
-		slog.Error(fmt.Sprintf("Error running app: %+v", errFrame.Error))
+		logger.Error(fmt.Sprintf("Error running app: %+v", errFrame.Error))
 		if errFrame.Fatal {
 			// Cancel all tasks downstream.
 			s.PushFrame(frames.CancelFrame{}, processors.FrameDirectionDownstream)
@@ -100,12 +100,12 @@ func (t *PipelineTask) HasFinished() bool {
 }
 
 func (t *PipelineTask) StopWhenDone() {
-	slog.Info(fmt.Sprintf("Task %s scheduled to stop when done", t.Name))
+	logger.Info(fmt.Sprintf("Task %s scheduled to stop when done", t.Name))
 	t.QueueFrame(frames.NewEndFrame())
 }
 
 func (t *PipelineTask) Cancel() {
-	slog.Info(fmt.Sprintf("Canceling pipeline task %s", t.Name))
+	logger.Info(fmt.Sprintf("Canceling pipeline task %s", t.Name))
 	t.source.PushFrame(frames.CancelFrame{}, processors.FrameDirectionDownstream)
 	t.cancel()
 }
@@ -116,7 +116,7 @@ func (t *PipelineTask) Run() {
 	go t.processUpQueue()
 	t.wg.Wait()
 	t.finished = true
-	slog.Info(fmt.Sprintf("%s Run Finished", t.Name))
+	logger.Info(fmt.Sprintf("%s Run Finished", t.Name))
 }
 
 func (t *PipelineTask) QueueFrame(frame frames.Frame) {
@@ -151,7 +151,7 @@ func (t *PipelineTask) processDownQueue() {
 			switch frame.(type) {
 			case *frames.StopTaskFrame, *frames.EndFrame, frames.StopTaskFrame, frames.EndFrame:
 				t.cancel()
-				//slog.Info(fmt.Sprintf("get %T, processDownQueue Done", frame)
+				//logger.Info(fmt.Sprintf("get %T, processDownQueue Done", frame)
 				return
 			}
 		}

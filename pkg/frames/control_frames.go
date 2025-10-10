@@ -1,6 +1,9 @@
 package frames
 
-import "fmt"
+import (
+	"fmt"
+	"reflect"
+)
 
 // ControlFrame is a frame for controlling the pipeline.
 type ControlFrame struct {
@@ -98,4 +101,30 @@ func NewIdleFrame() *IdleFrame {
 			BaseFrame: NewBaseFrameWithName("IdleFrame"),
 		},
 	}
+}
+
+// extractControlFrame 从帧中提取ControlFrame（通过反射检查是否嵌入了ControlFrame）
+func ExtractControlFrame(frame Frame) *ControlFrame {
+	val := reflect.ValueOf(frame)
+
+	if val.Kind() == reflect.Pointer {
+		val = val.Elem()
+	}
+
+	if val.Kind() != reflect.Struct {
+		return nil
+	}
+
+	for i := 0; i < val.NumField(); i++ {
+		field := val.Field(i)
+		fieldType := val.Type().Field(i)
+
+		if fieldType.Type == reflect.TypeOf(&ControlFrame{}) {
+			if !field.IsNil() {
+				return field.Interface().(*ControlFrame)
+			}
+		}
+	}
+
+	return nil
 }

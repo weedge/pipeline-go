@@ -2,6 +2,7 @@ package frames
 
 import (
 	"fmt"
+	"reflect"
 )
 
 // SystemFrame is a frame for system-level events.
@@ -145,4 +146,30 @@ func NewUsageMetricFrame(key string, value int) *UsageMetricFrame {
 
 func (f *UsageMetricFrame) String() string {
 	return fmt.Sprintf("%s(key: %s, value: %d)", f.Name(), f.Key, f.Value)
+}
+
+// extractSystemFrame 从帧中提取SystemFrame（通过反射检查是否嵌入了SystemFrame）
+func ExtractSystemFrame(frame Frame) *SystemFrame{
+	val := reflect.ValueOf(frame)
+
+	if val.Kind() == reflect.Pointer {
+		val = val.Elem()
+	}
+
+	if val.Kind() != reflect.Struct {
+		return nil
+	}
+
+	for i := 0; i < val.NumField(); i++ {
+		field := val.Field(i)
+		fieldType := val.Type().Field(i)
+
+		if fieldType.Type == reflect.TypeOf(&SystemFrame{}) {
+			if !field.IsNil() {
+				return field.Interface().(*SystemFrame)
+			}
+		}
+	}
+
+	return nil
 }

@@ -1,14 +1,3 @@
-
-
-
-<img width="1245" height="423" alt="image" src="https://github.com/user-attachments/assets/841dc53f-272d-4116-91d5-4dfe421f4182" />
-
-image gen from GPT [image](https://github.com/weedge/pipeline-py) to image, prompt:
-
-```
-Replace the Super Mario characters with Go programming language mascot (Gopher). Keep the green pipe structure in the middle exactly the same. Replace both Mario characters on the left and right sides with cute Go gophers in similar poses. The gophers should be pixel art style to match the original Mario aesthetic. Maintain the black background.
-```
-
 # Pipeline-Go
 
 Pipeline-Go is a Go library for building flexible, concurrent data processing pipelines. It is inspired by a similar Python project and provides a structured way to process streams of data "frames" through a series of composable "processors".
@@ -26,6 +15,7 @@ Pipeline-Go is a Go library for building flexible, concurrent data processing pi
 - **Rich Set of Processors**: Includes a variety of built-in processors for common tasks:
     - **Filtering**: `FrameFilter` (based on a function) and `TypeFilter` (based on frame type).
     - **Aggregation**: `SentenceAggregator`, `GatedAggregator`, `HoldFramesAggregator`, and `HoldLastFrameAggregator`.
+    - **Output Processing**: Simple `OutputProcessor` for basic frame handling, and advanced `AdvancedOutputProcessor` and `OutputFrameProcessor` for complex output scenarios with async processing, interruption handling, and metrics support.
 - **Extensible**: Easily create your own custom processors by implementing the `IFrameProcessor` interface.
 - **Concurrency-Safe**: Designed with concurrency in mind, using Go channels and goroutines for asynchronous processing.
 - **Async Processing**: `AsyncFrameProcessor` enables asynchronous frame handling with interruption support.
@@ -60,6 +50,12 @@ go run examples/filter_example.go
 go run examples/async_example.go
 # with interrupt
 go run examples/async_interruption_example.go
+```
+
+### Advanced Output Processor Example
+
+```shell
+go run examples/advanced_output_example.go
 ```
 
 ### Metrics Collection Example

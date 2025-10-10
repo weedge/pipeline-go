@@ -1,17 +1,17 @@
 package main
 
 import (
-	"log/slog"
 	"time"
 
 	"github.com/weedge/pipeline-go/pkg/frames"
+	"github.com/weedge/pipeline-go/pkg/logger"
 	"github.com/weedge/pipeline-go/pkg/pipeline"
 	"github.com/weedge/pipeline-go/pkg/processors"
 	"github.com/weedge/pipeline-go/pkg/processors/filters"
 )
 
 func main() {
-	slog.Info("Starting pipeline example...")
+	logger.Info("Starting pipeline example...")
 
 	// 1. Create the processo
 	// This filter will only allow frames that are NOT ImageRawFrames to pass
@@ -39,18 +39,18 @@ func main() {
 	go task.Run()
 
 	// 4. Send frames to the pipeline
-	slog.Info("Queueing TextFrame...")
+	logger.Info("Queueing TextFrame...")
 	task.QueueFrame(frames.NewTextFrame("Hello, world!"))
 
-	slog.Info("Queueing ImageRawFrame (will be filtered out)...")
+	logger.Info("Queueing ImageRawFrame (will be filtered out)...")
 	task.QueueFrame(frames.NewImageRawFrame([]byte{}, frames.ImageSize{}, "PNG", "RGB"))
 
-	slog.Info("Queueing AudioRawFrame...")
+	logger.Info("Queueing AudioRawFrame...")
 	task.QueueFrame(frames.NewAudioRawFrame([]byte{}, 16000, 1, 2))
 
 	// 5. Send a stop frame to terminate the pipeline
 	task.QueueFrame(frames.NewStopTaskFrame())
 	time.Sleep(1 * time.Second)
 
-	slog.Info("Pipeline finished.")
+	logger.Info("Pipeline finished.")
 }

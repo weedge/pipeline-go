@@ -2,10 +2,10 @@ package processors
 
 import (
 	"fmt"
-	"log/slog"
 	"time"
 
 	"github.com/weedge/pipeline-go/pkg/frames"
+	"github.com/weedge/pipeline-go/pkg/logger"
 )
 
 type FrameTraceLogger struct {
@@ -22,6 +22,6 @@ func (l *FrameTraceLogger) ProcessFrame(frame frames.Frame, direction FrameDirec
 	if l.delayMs > 0 {
 		time.Sleep(time.Duration(l.delayMs) * time.Millisecond)
 	}
-	slog.Info(fmt.Sprintf("Tag: %s Frame: %s", l.tag, frame))
+	logger.Info(fmt.Sprintf("Tag: %s Frame: %s", l.tag, frame))
 	l.PushFrame(frame, direction)
 }

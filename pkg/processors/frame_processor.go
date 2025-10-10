@@ -2,10 +2,10 @@ package processors
 
 import (
 	"fmt"
-	"log/slog"
 	"slices"
 
 	"github.com/weedge/pipeline-go/pkg/frames"
+	"github.com/weedge/pipeline-go/pkg/logger"
 )
 
 // FrameDirection indicates the direction of a frame in the pipeline.
@@ -200,18 +200,18 @@ func (p *FrameProcessor) PushUpstreamFrame(frame frames.Frame) {
 func (p *FrameProcessor) PushFrame(frame frames.Frame, direction FrameDirection) {
 	defer func() {
 		if r := recover(); r != nil {
-			slog.Info(fmt.Sprintf("Uncaught panic in %s: %v", p.name, r))
+			logger.Info(fmt.Sprintf("Uncaught panic in %s: %v", p.name, r))
 		}
 	}()
 
 	if direction == FrameDirectionDownstream && p.next != nil {
 		if p.verbose {
-			slog.Info(fmt.Sprintf("Downstream %d Pushing %+v  %s(%T) -> %s (Calling ProcessFrame on next: %T)", direction, frame, p.name, p, p.next.Name(), p.next))
+			logger.Info(fmt.Sprintf("Downstream %d Pushing %+v  %s(%T) -> %s (Calling ProcessFrame on next: %T)", direction, frame, p.name, p, p.next.Name(), p.next))
 		}
 		p.next.ProcessFrame(frame, direction)
 	} else if direction == FrameDirectionUpstream && p.prev != nil {
 		if p.verbose {
-			slog.Info(fmt.Sprintf("Upstream %d Pushing %+v  %s(%T) -> %s (Calling ProcessFrame on prev: %T)", direction, frame, p.name, p, p.prev.Name(), p.prev))
+			logger.Info(fmt.Sprintf("Upstream %d Pushing %+v  %s(%T) -> %s (Calling ProcessFrame on prev: %T)", direction, frame, p.name, p, p.prev.Name(), p.prev))
 		}
 
 		// Check if prev is a mockProcessor with a custom prevProcessor field
@@ -219,7 +219,7 @@ func (p *FrameProcessor) PushFrame(frame frames.Frame, direction FrameDirection)
 		p.prev.ProcessFrame(frame, direction)
 	} else {
 		if p.verbose {
-			slog.Info(fmt.Sprintf("Frame not pushed: direction=%d, next=%v, prev=%v", direction, p.next, p.prev))
+			logger.Info(fmt.Sprintf("Frame not pushed: direction=%d, next=%v, prev=%v", direction, p.next, p.prev))
 		}
 	}
 }
@@ -228,7 +228,7 @@ func (p *FrameProcessor) PushFrame(frame frames.Frame, direction FrameDirection)
 func (p *FrameProcessor) Link(next IFrameProcessor) {
 	p.next = next
 	if p.verbose {
-		slog.Info(fmt.Sprintf("%s(%T) -> %s(%T)", p.Name(), p, next.Name(), next))
+		logger.Info(fmt.Sprintf("%s(%T) -> %s(%T)", p.Name(), p, next.Name(), next))
 	}
 	//next.SetPrev(p) #ISSUE: don't use this,  pre FrameProcessor,not caller
 }
@@ -236,7 +236,7 @@ func (p *FrameProcessor) Link(next IFrameProcessor) {
 // SetPrev sets the previous processor in the pipeline.
 func (p *FrameProcessor) SetPrev(prev IFrameProcessor) {
 	if p.verbose {
-		slog.Info(fmt.Sprintf("%s(%T) <- %s(%T)", prev.Name(), prev, p.Name(), p))
+		logger.Info(fmt.Sprintf("%s(%T) <- %s(%T)", prev.Name(), prev, p.Name(), p))
 	}
 	p.prev = prev
 }
