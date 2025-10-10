@@ -67,7 +67,7 @@ func (h *CallerSkipHandler) Handle(ctx context.Context, r slog.Record) error {
 
 var Logger *slog.Logger = slog.New(
 	slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelInfo, AddSource: true,
+		Level: slog.LevelInfo, AddSource: false,
 	}),
 )
 
