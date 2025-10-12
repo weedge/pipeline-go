@@ -68,10 +68,10 @@ func (p *AsyncFrameProcessor) ProcessFrame(frame frames.Frame, direction FrameDi
 	switch frame.(type) {
 	case *frames.StartInterruptionFrame, frames.StartInterruptionFrame:
 		p.HandleInterruptions(frame)
-	default:
-		if p.porcessFrameAllowPush {
-			p.QueueFrame(frame, direction)
-		}
+	}
+
+	if p.porcessFrameAllowPush {
+		p.QueueFrame(frame, direction)
 	}
 }
 
@@ -111,7 +111,7 @@ func (p *AsyncFrameProcessor) HandleInterruptions(frame frames.Frame) {
 	p.PushFrame(frame, FrameDirectionDownstream)
 
 	// Create a new queue and task
-	p.pushQueue = make(chan pushItem, 128)
+	p.pushQueue = make(chan pushItem, p.pushQueueSize)
 	p.pushFrameTask = &sync.WaitGroup{}
 	p.createPushTask()
 	logger.Info("AsyncFrameProcessor createPushTask is OK!")

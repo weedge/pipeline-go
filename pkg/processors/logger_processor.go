@@ -69,6 +69,16 @@ func NewDefaultFrameLoggerProcessorWithName(name string) *FrameLoggerProcessor {
 	return NewFrameLoggerProcessor(name, "Frame", []frames.Frame{}, []frames.Frame{})
 }
 
+// NewDefaultFrameLoggerProcessorWithIncludeFrame 创建一个包括include frames设置的 FrameLoggerProcessor
+func NewDefaultFrameLoggerProcessorWithIncludeFrame(includeFrames []frames.Frame) *FrameLoggerProcessor {
+	return NewFrameLoggerProcessor("FrameLoggerProcessor", "Frame", []frames.Frame{}, includeFrames)
+}
+
+// NewDefaultFrameLoggerProcessorWithIngoreFrame 创建一个忽略ignore frames设置的 FrameLoggerProcessor
+func NewDefaultFrameLoggerProcessorWithIngoreFrame(ingoreFrames []frames.Frame) *FrameLoggerProcessor {
+	return NewFrameLoggerProcessor("FrameLoggerProcessor", "Frame", ingoreFrames, []frames.Frame{})
+}
+
 func (p *FrameLoggerProcessor) Prefix() string {
 	return p.prefix
 }
