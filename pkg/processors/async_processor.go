@@ -18,6 +18,9 @@ type AsyncFrameProcessor struct {
 	pushQueueSize         int
 	pushQueue             chan pushItem
 	pushFrameTask         *sync.WaitGroup
+	pushUpQueueSize       int
+	pushUpQueue           chan pushItem
+	pushUpFrameTask       *sync.WaitGroup
 	interruptionMu        sync.Mutex
 	porcessFrameAllowPush bool
 	passText              bool
@@ -32,11 +35,14 @@ type pushItem struct {
 
 // NewAsyncFrameProcessor creates a new AsyncFrameProcessor.
 func NewAsyncFrameProcessor(name string) *AsyncFrameProcessor {
-	pushQueueSize := 128
-	return NewAsyncFrameProcessorWithPushQueueSize(name, pushQueueSize)
+	pushQueueSize, pushUpQueueSize := 128, 0
+	return NewAsyncFrameProcessorWithPushQueueSize(name, pushQueueSize, pushUpQueueSize)
 }
 
-func NewAsyncFrameProcessorWithPushQueueSize(name string, pushQueueSize int) *AsyncFrameProcessor {
+func NewAsyncFrameProcessorWithPushQueueSize(name string, pushQueueSize, pushUpQueueSize int) *AsyncFrameProcessor {
+	if pushQueueSize <= 0 {
+		pushQueueSize = 128
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	p := &AsyncFrameProcessor{
 		FrameProcessor:        NewFrameProcessor(name),
@@ -49,6 +55,13 @@ func NewAsyncFrameProcessorWithPushQueueSize(name string, pushQueueSize int) *As
 		passText:              false,
 		passRawAudio:          false,
 	}
+
+	if pushUpQueueSize > 0 {
+		p.pushUpQueueSize = pushUpQueueSize
+		p.pushUpQueue = make(chan pushItem, pushUpQueueSize)
+		p.pushUpFrameTask = &sync.WaitGroup{}
+	}
+
 	p.createPushTask()
 	return p
 }
@@ -109,10 +122,13 @@ func (p *AsyncFrameProcessor) Cleanup() {
 
 	// Cancel the push frame task
 	p.cancel()
-	logger.Info("Cleanuping1", "name", p.Name())
 
 	// Wait for the task to finish
 	p.pushFrameTask.Wait()
+	if p.pushUpQueueSize > 0 {
+		p.pushUpFrameTask.Wait()
+	}
+
 	logger.Info("Cleanup Done", "name", p.Name())
 }
 
@@ -132,6 +148,9 @@ func (p *AsyncFrameProcessor) HandleInterruptions(frame frames.Frame) {
 
 	// Wait for the task to finish
 	p.pushFrameTask.Wait()
+	if p.pushUpQueueSize > 0 {
+		p.pushUpFrameTask.Wait()
+	}
 
 	// Reset the task
 	p.ctx, p.cancel = context.WithCancel(context.Background())
@@ -144,21 +163,47 @@ func (p *AsyncFrameProcessor) HandleInterruptions(frame frames.Frame) {
 	p.pushFrameTask = &sync.WaitGroup{}
 	p.createPushTask()
 	logger.Info("AsyncFrameProcessor createPushTask is OK!")
+
+	if p.pushUpQueueSize > 0 {
+		// Create a new upstream queue and task
+		p.pushUpQueue = make(chan pushItem, p.pushUpQueueSize)
+		p.pushUpFrameTask = &sync.WaitGroup{}
+		p.createPushTask()
+		logger.Info("AsyncFrameProcessor createPushTask is OK!")
+	}
 }
 
 // createPushTask creates a new push frame task.
 func (p *AsyncFrameProcessor) createPushTask() {
-	p.pushFrameTask.Add(1)
-	go p.pushFrameTaskHandler()
+	if p.pushFrameTask != nil {
+		p.pushFrameTask.Add(1)
+		go p.pushFrameTaskHandler()
+		logger.Infof("%s create pushFrameTaskHandler", p.Name())
+	}
+
+	if p.pushUpFrameTask != nil {
+		p.pushUpFrameTask.Add(1)
+		go p.pushUpFrameTaskHandler()
+		logger.Infof("%s create pushUpFrameTaskHandler", p.Name())
+	}
 }
 
 // QueueFrame queues a frame for processing.
 func (p *AsyncFrameProcessor) QueueFrame(frame frames.Frame, direction FrameDirection) {
+	queue := p.pushQueue
+	if p.pushUpQueueSize > 0 && direction == FrameDirectionUpstream {
+		queue = p.pushUpQueue
+	}
+
 	select {
-	case p.pushQueue <- pushItem{frame: frame, direction: direction}:
+	case queue <- pushItem{frame: frame, direction: direction}:
 	default:
-		logger.Warnf("Warning: push queue is full for %s, frame: %+v direction: %s", p.name, frame, direction)
-		time.Sleep(10 * time.Second)
+		if p.pushUpQueueSize > 0 && direction == FrameDirectionUpstream {
+			logger.Warnf("Warning: pushUpQueue is full for %s, frame: %+v direction: %s", p.name, frame, direction)
+		} else {
+			logger.Warnf("Warning: pushQueue is full for %s, frame: %+v direction: %s", p.name, frame, direction)
+		}
+		//time.Sleep(3 * time.Second)// open to test slow process
 	}
 }
 func (p *AsyncFrameProcessor) QueueUpStreamFrame(frame frames.Frame) {
@@ -186,7 +231,45 @@ func (p *AsyncFrameProcessor) pushFrameTaskHandler() {
 			}
 
 			// Push the frame
+			// !NOTE:
+			// - if PushFrame is Slow(e.g.: local llm gen token slow),
+			// 	pushQueue maybe is full when push BotSpeakingFrame to upstream
+			// - use param pushUpQueueSize>0 to create upstream task queue
+			// !TODONE:
+			// so need have two task queue: upstreamTask and downstreamTask,
+			// But need think one Prcessor to do Up/Down Frame at the same time
+			// if no shared stat, is ok.
 			p.PushFrame(item.frame, item.direction)
+
+			// Check if this is an end frame
+			if _, ok := item.frame.(frames.EndFrame); ok {
+				running = false
+			}
+		case <-time.After(1 * time.Second):
+			// Timeout, continue the loop
+			continue
+		}
+	}
+}
+
+// pushUpFrameTaskHandler is the handler for the push upstream frame task.
+func (p *AsyncFrameProcessor) pushUpFrameTaskHandler() {
+	defer p.pushUpFrameTask.Done()
+
+	running := true
+	for running {
+		select {
+		case <-p.ctx.Done():
+			logger.Info(fmt.Sprintf("%s pushUpFrameTaskHandler cancelled", p.name))
+			return
+		case item, ok := <-p.pushUpQueue:
+			if !ok {
+				// Channel closed
+				logger.Warn(fmt.Sprintf("%s push UpQueue closed", p.name))
+				return
+			}
+
+			p.PushUpstreamFrame(item.frame)
 
 			// Check if this is an end frame
 			if _, ok := item.frame.(frames.EndFrame); ok {
