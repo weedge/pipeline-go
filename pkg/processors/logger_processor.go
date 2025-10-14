@@ -123,7 +123,7 @@ func (p *FrameLoggerProcessor) ProcessFrame(frame frames.Frame, direction FrameD
 				fromTo = fmt.Sprintf("%s(%T) ---> %s(%T)", p.name, p, p.next.Name(), p.next)
 			}
 
-			msg := fmt.Sprintf("%s %s: %s", fromTo, p.prefix, frame.String())
+			msg := fmt.Sprintf("%s %s: (%T)%s", fromTo, p.prefix, frame, frame.String())
 
 			logger.Info(msg)
 		}
