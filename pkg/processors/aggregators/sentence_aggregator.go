@@ -40,18 +40,15 @@ func (a *SentenceAggregator) ProcessFrame(frame frames.Frame, direction processo
 	switch f := frame.(type) {
 	case *frames.TextFrame:
 		// Add a space if the aggregation is not empty and the new text doesn't start with one.
-		if a.aggregation != "" && !strings.HasPrefix(f.Text, " ") {
-			a.aggregation += " "
-		}
 		a.aggregation += f.Text
 		if a.hasEndOfSentence(a.aggregation) {
-			a.PushFrame(&frames.TextFrame{Text: a.aggregation}, direction)
+			a.PushFrame(frames.NewTextFrame(a.aggregation), direction)
 			a.aggregation = ""
 		}
 	case *frames.EndFrame:
 		// If there's any leftover text, push it out before ending.
 		if a.aggregation != "" {
-			a.PushFrame(&frames.TextFrame{Text: a.aggregation}, direction)
+			a.PushFrame(frames.NewTextFrame(a.aggregation), direction)
 			a.aggregation = ""
 		}
 		a.PushFrame(f, direction)
@@ -61,7 +58,7 @@ func (a *SentenceAggregator) ProcessFrame(frame frames.Frame, direction processo
 	}
 
 	if isPushAgg && a.aggregation != "" {
-		a.PushFrame(&frames.TextFrame{Text: a.aggregation}, direction)
+		a.PushFrame(frames.NewTextFrame(a.aggregation), direction)
 		a.aggregation = ""
 	}
 }

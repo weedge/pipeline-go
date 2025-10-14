@@ -23,9 +23,9 @@ const (
 func (d FrameDirection) String() string {
 	switch d {
 	case FrameDirectionUpstream:
-		return "Upstream"
+		return "Upstream(<-)"
 	case FrameDirectionDownstream:
-		return "Downstream"
+		return "Downstream(->)"
 	default:
 		return "Unknown"
 	}

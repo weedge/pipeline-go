@@ -88,6 +88,10 @@ func (p *AsyncFrameProcessor) ProcessFrame(frame frames.Frame, direction FrameDi
 
 	// Handle interruption frames
 	switch frame.(type) {
+	case *frames.EndFrame:
+		p.Cleanup()
+	case *frames.CancelFrame:
+		p.Cleanup()
 	case *frames.StartInterruptionFrame, frames.StartInterruptionFrame:
 		p.HandleInterruptions(frame)
 	}
@@ -99,14 +103,17 @@ func (p *AsyncFrameProcessor) ProcessFrame(frame frames.Frame, direction FrameDi
 
 // Cleanup implements the IFrameProcessor interface.
 func (p *AsyncFrameProcessor) Cleanup() {
+	logger.Info("Cleanuping", "name", p.Name())
 	p.interruptionMu.Lock()
 	defer p.interruptionMu.Unlock()
 
 	// Cancel the push frame task
 	p.cancel()
+	logger.Info("Cleanuping1", "name", p.Name())
 
 	// Wait for the task to finish
 	p.pushFrameTask.Wait()
+	logger.Info("Cleanup Done", "name", p.Name())
 }
 
 // HandleInterruptions handles interruption frames.
