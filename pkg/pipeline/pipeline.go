@@ -22,7 +22,16 @@ func NewPipelineSource(upstreamPushFrame func(frame frames.Frame, direction proc
 }
 
 func (s *PipelineSource) ProcessFrame(frame frames.Frame, direction processors.FrameDirection) {
-	//log.Printf("PipelineSource %T, %d", frame, direction)
+	//logger.Infof("PipelineSource %T, %d", frame, direction)
+	switch frame.(type) {
+	case *frames.StartFrame:
+		logger.Infof("PipelineSource get %T direction %s Pipeline Start!", frame, direction.String())
+	case *frames.EndFrame:
+		logger.Infof("PipelineSource get %T direction %s Pipeline End!", frame, direction.String())
+	case *frames.CancelFrame:
+		logger.Infof("PipelineSource get %T direction %s Pipeline Cancel!", frame, direction.String())
+	}
+
 	switch direction {
 	case processors.FrameDirectionUpstream:
 		s.upstreamPushFrame(frame, direction)
