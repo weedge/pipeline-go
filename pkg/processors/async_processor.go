@@ -20,6 +20,8 @@ type AsyncFrameProcessor struct {
 	pushFrameTask         *sync.WaitGroup
 	interruptionMu        sync.Mutex
 	porcessFrameAllowPush bool
+	passText              bool
+	passRawAudio          bool
 }
 
 // pushItem represents an item in the push queue.
@@ -41,11 +43,31 @@ func NewAsyncFrameProcessorWithPushQueueSize(name string, pushQueueSize int) *As
 		ctx:                   ctx,
 		cancel:                cancel,
 		pushQueueSize:         pushQueueSize,
-		pushQueue:             make(chan pushItem, pushQueueSize), // Buffer size similar to Python's asyncio.Queue
+		pushQueue:             make(chan pushItem, pushQueueSize),
 		pushFrameTask:         &sync.WaitGroup{},
 		porcessFrameAllowPush: false,
+		passText:              false,
+		passRawAudio:          false,
 	}
 	p.createPushTask()
+	return p
+}
+
+func (p *AsyncFrameProcessor) PassText() bool {
+	return p.passText
+}
+
+func (p *AsyncFrameProcessor) WithPassText(passText bool) *AsyncFrameProcessor {
+	p.passText = passText
+	return p
+}
+
+func (p *AsyncFrameProcessor) PassRawAudio() bool {
+	return p.passRawAudio
+}
+
+func (p *AsyncFrameProcessor) WithPassRawAudio(passRawAudio bool) *AsyncFrameProcessor {
+	p.passRawAudio = passRawAudio
 	return p
 }
 
@@ -123,13 +145,20 @@ func (p *AsyncFrameProcessor) createPushTask() {
 	go p.pushFrameTaskHandler()
 }
 
-// queueFrame queues a frame for processing.
+// QueueFrame queues a frame for processing.
 func (p *AsyncFrameProcessor) QueueFrame(frame frames.Frame, direction FrameDirection) {
 	select {
 	case p.pushQueue <- pushItem{frame: frame, direction: direction}:
 	default:
-		logger.Warn(fmt.Sprintf("Warning: push queue is full for processor %s", p.name))
+		logger.Warnf("Warning: push queue is full for %s, frame: %+v direction: %s", p.name, frame, direction)
+		time.Sleep(10 * time.Second)
 	}
+}
+func (p *AsyncFrameProcessor) QueueUpStreamFrame(frame frames.Frame) {
+	p.QueueFrame(frame, FrameDirectionUpstream)
+}
+func (p *AsyncFrameProcessor) QueueDownStreamFrame(frame frames.Frame) {
+	p.QueueFrame(frame, FrameDirectionDownstream)
 }
 
 // pushFrameTaskHandler is the handler for the push frame task.

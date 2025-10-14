@@ -1,36 +1,42 @@
 package aggregators
 
 import (
-	"regexp"
+	"reflect"
 	"strings"
 
+	"github.com/weedge/pipeline-go/pkg"
 	"github.com/weedge/pipeline-go/pkg/frames"
 	"github.com/weedge/pipeline-go/pkg/processors"
 )
 
-var endOfSentencePattern = regexp.MustCompile(`[\.。\?？\!！:：]`)
-
 // SentenceAggregator aggregates text frames into sentences.
 type SentenceAggregator struct {
-	processors.FrameProcessor
+	*processors.FrameProcessor
 	aggregation string
+	endFrame    reflect.Type // endFrame to flush sentence
 }
 
 // NewSentenceAggregator creates a new SentenceAggregator.
 func NewSentenceAggregator() *SentenceAggregator {
-	return &SentenceAggregator{}
+	return NewSentenceAggregatorWithEnd(reflect.TypeOf(&frames.EndFrame{}))
+}
+
+func NewSentenceAggregatorWithEnd(endFrame reflect.Type) *SentenceAggregator {
+	return &SentenceAggregator{
+		FrameProcessor: processors.NewFrameProcessor("SentenceAggregator"),
+		endFrame:       endFrame,
+	}
 }
 
 // hasEndOfSentence checks for sentence-terminating punctuation using regex.
 func (a *SentenceAggregator) hasEndOfSentence(s string) bool {
-	// A simplified regex is used here for brevity. The original Python version's
-	// lookbehind-based regex is not directly supported in Go's standard regexp engine.
-	// This version checks for common sentence-ending punctuation at the end of the string.
-	return endOfSentencePattern.MatchString(strings.TrimSpace(s))
+	return pkg.MatchEndOfSentence(strings.TrimSpace(s))
 }
 
 // ProcessFrame accumulates text and emits a frame when a sentence is complete.
 func (a *SentenceAggregator) ProcessFrame(frame frames.Frame, direction processors.FrameDirection) {
+	isPushAgg := reflect.TypeOf(frame) == a.endFrame
+
 	switch f := frame.(type) {
 	case *frames.TextFrame:
 		// Add a space if the aggregation is not empty and the new text doesn't start with one.
@@ -42,7 +48,7 @@ func (a *SentenceAggregator) ProcessFrame(frame frames.Frame, direction processo
 			a.PushFrame(&frames.TextFrame{Text: a.aggregation}, direction)
 			a.aggregation = ""
 		}
-	case frames.EndFrame:
+	case *frames.EndFrame:
 		// If there's any leftover text, push it out before ending.
 		if a.aggregation != "" {
 			a.PushFrame(&frames.TextFrame{Text: a.aggregation}, direction)
@@ -52,5 +58,10 @@ func (a *SentenceAggregator) ProcessFrame(frame frames.Frame, direction processo
 	default:
 		// Pass other frame types through.
 		a.PushFrame(frame, direction)
+	}
+
+	if isPushAgg && a.aggregation != "" {
+		a.PushFrame(&frames.TextFrame{Text: a.aggregation}, direction)
+		a.aggregation = ""
 	}
 }
