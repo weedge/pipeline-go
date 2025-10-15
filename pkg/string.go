@@ -14,7 +14,7 @@ func MatchEndOfSentence(text string) bool {
 	}
 
 	// 检查是否以句子结束标点符号结尾
-	endPattern := regexp.MustCompile(`[\.。\?？\!！:：]$`)
+	endPattern := regexp.MustCompile(`[\,，\.。\?？\!！:：]$`)
 	if !endPattern.MatchString(trimmed) {
 		return false
 	}
