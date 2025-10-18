@@ -251,8 +251,9 @@ func (p *AsyncFrameProcessor) pushFrameTaskHandler() {
 			// if no shared stat, is ok.
 			p.PushFrame(item.frame, item.direction)
 
-			// Check if this is an end frame
-			if _, ok := item.frame.(frames.EndFrame); ok {
+			// Check if this is an End/Cancel frame
+			switch item.frame.(type) {
+			case *frames.EndFrame, *frames.CancelFrame:
 				running = false
 			}
 		case <-time.After(1 * time.Second):
@@ -281,8 +282,9 @@ func (p *AsyncFrameProcessor) pushUpFrameTaskHandler() {
 
 			p.PushUpstreamFrame(item.frame)
 
-			// Check if this is an end frame
-			if _, ok := item.frame.(frames.EndFrame); ok {
+			// Check if this is an End/Cancel frame
+			switch item.frame.(type) {
+			case *frames.EndFrame, *frames.CancelFrame:
 				running = false
 			}
 		case <-time.After(1 * time.Second):
