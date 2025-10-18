@@ -17,6 +17,8 @@ type PipelineParams struct {
 	EnableUsageMetrics      bool
 	SendInitialEmptyMetrics bool
 	ReportOnlyInitialTTFB   bool
+	IsPushBlock             bool
+	IsUpPushBlock           bool
 }
 
 // Source is a processor that handles upstream frames for a task.
@@ -137,6 +139,8 @@ func (t *PipelineTask) processDownQueue() {
 		EnableMetrics:         t.params.EnableMetrics,
 		EnableUsageMetrics:    t.params.EnableUsageMetrics,
 		ReportOnlyInitialTTFB: t.params.ReportOnlyInitialTTFB,
+		IsPushBlock:           t.params.IsPushBlock,
+		IsUpPushBlock:         t.params.IsUpPushBlock,
 	}
 	t.source.ProcessFrame(startFrame, processors.FrameDirectionDownstream)
 
