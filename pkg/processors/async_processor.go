@@ -25,6 +25,8 @@ type AsyncFrameProcessor struct {
 	porcessFrameAllowPush bool
 	passText              bool
 	passRawAudio          bool
+	isPushBlock           bool
+	isUpPushBlock         bool
 }
 
 // pushItem represents an item in the push queue.
@@ -35,13 +37,13 @@ type pushItem struct {
 
 // NewAsyncFrameProcessor creates a new AsyncFrameProcessor.
 func NewAsyncFrameProcessor(name string) *AsyncFrameProcessor {
-	pushQueueSize, pushUpQueueSize := 128, 0
+	pushQueueSize, pushUpQueueSize := 1024, 1024
 	return NewAsyncFrameProcessorWithPushQueueSize(name, pushQueueSize, pushUpQueueSize)
 }
 
 func NewAsyncFrameProcessorWithPushQueueSize(name string, pushQueueSize, pushUpQueueSize int) *AsyncFrameProcessor {
 	if pushQueueSize <= 0 {
-		pushQueueSize = 128
+		pushQueueSize = 1024
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	p := &AsyncFrameProcessor{
@@ -54,6 +56,8 @@ func NewAsyncFrameProcessorWithPushQueueSize(name string, pushQueueSize, pushUpQ
 		porcessFrameAllowPush: false,
 		passText:              false,
 		passRawAudio:          false,
+		isPushBlock:           false,
+		isUpPushBlock:         false,
 	}
 
 	if pushUpQueueSize > 0 {
@@ -100,7 +104,10 @@ func (p *AsyncFrameProcessor) ProcessFrame(frame frames.Frame, direction FrameDi
 	p.FrameProcessor.ProcessFrame(frame, direction)
 
 	// Handle interruption frames
-	switch frame.(type) {
+	switch f := frame.(type) {
+	case *frames.StartFrame:
+		p.isPushBlock = f.IsPushBlock
+		p.isUpPushBlock = f.IsUpPushBlock
 	case *frames.EndFrame:
 		p.Cleanup()
 	case *frames.CancelFrame:
@@ -195,15 +202,18 @@ func (p *AsyncFrameProcessor) QueueFrame(frame frames.Frame, direction FrameDire
 		queue = p.pushUpQueue
 	}
 
-	select {
-	case queue <- pushItem{frame: frame, direction: direction}:
-	default:
-		if p.pushUpQueueSize > 0 && direction == FrameDirectionUpstream {
-			logger.Warnf("Warning: pushUpQueue is full for %s, frame: %+v direction: %s", p.name, frame, direction)
-		} else {
-			logger.Warnf("Warning: pushQueue is full for %s, frame: %+v direction: %s", p.name, frame, direction)
+	if p.isPushBlock {
+		queue <- pushItem{frame: frame, direction: direction}
+	} else {
+		select {
+		case queue <- pushItem{frame: frame, direction: direction}:
+		default:
+			if p.pushUpQueueSize > 0 && direction == FrameDirectionUpstream {
+				logger.Warnf("Warning: pushUpQueue is full for %s, loss frame: %+v direction: %s", p.name, frame, direction)
+			} else {
+				logger.Warnf("Warning: pushQueue is full for %s, loss frame: %+v direction: %s", p.name, frame, direction)
+			}
 		}
-		//time.Sleep(3 * time.Second)// open to test slow process
 	}
 }
 func (p *AsyncFrameProcessor) QueueUpStreamFrame(frame frames.Frame) {

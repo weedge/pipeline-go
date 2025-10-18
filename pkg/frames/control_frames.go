@@ -31,6 +31,8 @@ type StartFrame struct {
 	ReportOnlyInitialTTFB bool
 	AudioInSampleRate     int
 	AudioOutSampleRate    int
+	IsPushBlock           bool
+	IsUpPushBlock         bool
 }
 
 // new default start frame
@@ -45,10 +47,12 @@ func NewStartFrame() *StartFrame {
 		ReportOnlyInitialTTFB: false,
 		AudioInSampleRate:     16000,
 		AudioOutSampleRate:    16000,
+		IsPushBlock:           false,
+		IsUpPushBlock:         false,
 	}
 }
 func (f *StartFrame) String() string {
-	return fmt.Sprintf("%s(allowInterruptions: %t, enableMetrics: %t, enableUsageMetrics: %t, reportOnlyInitialTTFB: %t, audioInSampleRate: %d, audioOutSampleRate: %d)", f.Name(), f.AllowInterruptions, f.EnableMetrics, f.EnableUsageMetrics, f.ReportOnlyInitialTTFB, f.AudioInSampleRate, f.AudioOutSampleRate)
+	return fmt.Sprintf("%s(allowInterruptions: %t, enableMetrics: %t, enableUsageMetrics: %t, reportOnlyInitialTTFB: %t, audioInSampleRate: %d, audioOutSampleRate: %d, IsPushBlock: %t, IsUpPushBlock: %t)", f.Name(), f.AllowInterruptions, f.EnableMetrics, f.EnableUsageMetrics, f.ReportOnlyInitialTTFB, f.AudioInSampleRate, f.AudioOutSampleRate, f.IsPushBlock, f.IsUpPushBlock)
 }
 
 // EndFrame indicates that a pipeline has ended.
