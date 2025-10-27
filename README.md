@@ -2,6 +2,9 @@
 
 Pipeline-Go is a Go library for building flexible, concurrent data processing pipelines. It is inspired by a similar Python project and provides a structured way to process streams of data "frames" through a series of composable "processors".
 
+## Design
+⭐️ [pipeline design](https://github.com/ai-bot-pro/pipeline-py#design) ⭐️
+
 ## Core Concepts
 
 - **Frame**: The basic unit of data that flows through a pipeline. Frames can be of various types, such as `TextFrame`, `ImageRawFrame`, or control frames like `EndFrame` and `StartFrame`.
